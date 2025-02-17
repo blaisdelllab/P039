@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-02-12
+Last updated: 2025-02-17
 
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
@@ -114,7 +114,7 @@ try:
         house_light_GPIO_num = 21
         # LEDs through the IoT relay device
         
-        # Setup webcams
+        # TO-DO: add in any camera-specific libraries or functions below
         
         # Setup use of pi()
         rpi_board = pigpio.pi()
@@ -193,6 +193,7 @@ class ExperimenterControlPanel(object):
         self.control_window.title("P039 Control Panel")
         ##  Next, setup variables within the control panel
         # Subject ID
+        # TO-DO: Assign list when birds are picked.
         self.pigeon_name_list = ["Bird1", "Bird2", "Bird3", "Bird4"]
         self.pigeon_name_list.sort() # This alphabetizes the list
         self.pigeon_name_list.insert(0, "TEST")
@@ -205,7 +206,6 @@ class ExperimenterControlPanel(object):
                                           self.subject_ID_variable,
                                           *self.pigeon_name_list,
                                           command = self.set_pigeon_ID).pack()
-        self.subject_ID_variable.set("TEST")
         
         
         # Training phases
@@ -220,7 +220,7 @@ class ExperimenterControlPanel(object):
                         variable = self.training_phase_variable,
                         text = t_name,
                         value = self.training_phase_name_list.index(t_name)).pack()
-        self.training_phase_variable.set(2) # Default set to first training phase
+        self.training_phase_variable.set(0) # Default set to first training phase
         
         # Record video variable?
         Label(self.control_window,
@@ -333,44 +333,83 @@ class MainScreen(object):
         
         # In order to properly counter-balance the early order of probe
         # stimuli, we need to assign subjects to one of four groups. Each group 
-        # will recive the stimuli in a different order.
+        # will recive the stimuli in a different order:
         
-        # COMPLETED: replicate the table from spec sheet
+        # For our initial portion of the autoshaping/mixed instrumental portion,
+        # we assigned subjects to one of four different groups. G1, G2, G3, or G4
+        # G1 would recieve probe stimuli in the following order: P1-P5-P2-P3-P4
+        # G2 would recieve probe stimuli in the following order: P1-P5-P4-P3-P2
+        # G3 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
+        # G4 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
         
-    # For our initial portion of the autoshaping/mixed instrumental portion,
-    # we assigned subjects to one of four different groups. G1, G2, G3, or G4
-    # G1 would recieve probe stimuli in the following order: P1-P5-P2-P3-P4
-    # G2 would recieve probe stimuli in the following order: P1-P5-P4-P3-P2
-    # G3 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
-    # G4 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
-    
-    # This counterbalancing schedule was maintained across multiple sessions.
-    # Expand when birds are picked.
+        # This counterbalancing schedule was maintained across multiple sessions.
+        # TO-DO: Assign and expand when birds are picked.
         dict_of_subject_assignments = {
             "TEST": 1,
             "Bird1": 1,
             "Bird2": 2,
-            
+            "Bird3": 3,
+            "Bird4": 4
             }
         
         self.control_condition = dict_of_subject_assignments[self.subject_ID]
         
-        if self.control_condition == 1:
-            self.probe_stimulus_order = [1, 5, 2, 3, 4]
-        elif self.control_condition == 2:
-            self.probe_stimulus_order = [1, 5, 4, 3, 2]
-        elif self.control_condition == 3:
-            self.probe_stimulus_order = [5, 1, 2, 3, 4]
-        elif self.control_condition == 4:
-            self.probe_stimulus_order = [5, 1, 4, 3, 2]
+        if self.control_condition       == 1:
+            self.probe_stimulus_order   = [1, 5, 2, 3, 4]
+        elif self.control_condition     == 2:
+            self.probe_stimulus_order   = [1, 5, 4, 3, 2]
+        elif self.control_condition     == 3:
+            self.probe_stimulus_order   = [5, 1, 2, 3, 4]
+        elif self.control_condition     == 4:
+            self.probe_stimulus_order   = [5, 1, 4, 3, 2]
             
-        # Define some other variables that will be important for the procedure
+        ## Define some other variables that will be important for the procedure
         self.autoshaping_RR = 5
         self.choice_task_RR = 10
+        self.trial_num = 0 # counter for current trial in session
+        self.trial_stage = 0 # Trial substage (we have 2: blank screen/stimulus presentation or choice trial/terminal link)
+        self.max_number_of_reinforced_trials = 90 # Max number of trials within a session (three trials per stimulus)
         
-        if self.training_phase in [0,1]: # if autoshaping/instrumental
-            self.illuminated_key = "NA" # set up key variable
+        # Timing variables
+        self.auto_reinforcer_timer = 30 * 1000 # Time (ms) before reinforcement for AS
+        self.start_time = None # This will be reset once the session actually starts
+        self.trial_start = None # Duration into each trial as a second count, resets each trial
+        self.session_duration = datetime.now() + timedelta(minutes = 90) # Max session time is 90 min
+        if self.training_phase in [0, 1]:
+            self.ITI_duration = 10 * 1000 # duration of inter-trial interval (ms) is variable between 10 - 20 s
+        elif self.training_phase == 2:
+            self.ITI_duration = 20 * 1000 # duration of inter-trial interval (ms)
+        self.hopper_duration = 5 * 1000 # duration of accessible hopper (ms)
+        self.trial_delay_duration = 10 * 1000 # delay after a trial starts but before the stimulus is presented (screen is black)
         
+        # These are additional stimuli-specific variables...
+        self.image_center = [512,374]
+        if self.training_phase == 2:
+            self.choice_key_coord_dict = {
+                "left_choice"  : [250, 374],
+                "right_choice" : [800, 374]
+                } 
+        self.neutral_feedback_color = "#2596BE" # For the blue circle in pre-training
+        self.background_color = "#7F7F7F" # Background color for trials for all stimuli
+        self.yellow_color = "#E8D24C"
+        self.brown_color = "#31131E"
+        
+        ## Setup data structure...
+        self.session_data_frame = [] #This where trial-by-trial data is stored
+        header_list = ["Subject", "Date", "ExpPhaseNum", "ExpPhaseName", 
+                       "SessionTime", "TrialNum", "TrialType", "EventType",
+                       "TrialSubStage", "TrialTime", "TrialSubStageTimer",
+                       "ITIDuration", "Xcord","Ycord", "CenterPythDist", 
+                       "LeftPythDist", "RightPythDist", "CenterStim",
+                       "LeftStim", "LeftStimTrainingSet", "LeftStimNumber",
+                       "RightStim", "RightStimTrainingSet", "RightStimNumber",
+                       "SubPhase1RR", "SubPhase1LeftButtonPresses",
+                       "SubPhase1RightButtonPresses", "SubPhase2RR",
+                       "SubPhase2ButtonPresses", "VideoRecorded",
+                       "VideoFileName"] # Column headers
+        self.session_data_frame.append(header_list) # First row of matrix is the column headers
+        self.myFile_loc = 'FILL' # To be filled later on after Pig. ID is provided (in set vars func below)
+
         ## Set up the visual Canvas
         self.root = Toplevel()
         self.root.title(f"P039: {self.training_phase_name_list[self.training_phase][3:]}") # this is the title of the windows
@@ -378,7 +417,7 @@ class MainScreen(object):
         self.mainscreen_width = 1024 # width of the experimental canvas screen
         self.root.bind("<Escape>", self.exit_program) # bind exit program to the "esc" key
         
-        # If the version is the one running in the boxes...
+        # If the version is the one running in the boxes, run some independent processes
         if operant_box_version: 
             # Keybind relevant keys
             self.cursor_visible = True # Cursor starts on...
@@ -403,49 +442,6 @@ class MainScreen(object):
                                    width = self.mainscreen_width)
             self.mastercanvas.pack()
         
-        # Timing variables
-        self.auto_reinforcer_timer = 30 * 1000 # Time (ms) before reinforcement for AS
-        self.start_time = None # This will be reset once the session actually starts
-        self.trial_start = None # Duration into each trial as a second count, resets each trial
-        self.session_duration = datetime.now() + timedelta(minutes = 90) # Max session time is 90 min
-        if self.training_phase in [0, 1]:
-            self.ITI_duration = 10 * 1000 # duration of inter-trial interval (ms) is variable between 10 - 20 s
-        elif self.training_phase == 2:
-            self.ITI_duration = 20 * 1000 # duration of inter-trial interval (ms)
-        self.hopper_duration = 5 * 1000 # duration of accessible hopper (ms)
-        self.current_trial_counter = 0 # counter for current trial in session
-        self.trial_stage = 0 # Trial substage (we have 3: blank screen, stimulus presented, and feeding)
-        self.trial_delay_duration = 10 * 1000 # delay after a trial starts but before the stimulus is presented (screen is black)
-        
-
-        # These are additional "under the hood" variables that need to be declared
-        self.trial_num = 0
-        self.max_number_of_reinforced_trials = 90 # Max number of trials within a session (three trials per stimulus)
-        if self.training_phase in [0,1]:
-            self.image_center = [512,374]
-        elif self.training_phase == 2:
-            self.choice_key_coord_dict = {"left_choice"  : [250, 374], 
-                                          "right_choice" : [800, 374]
-                              } 
-        
-        self.session_data_frame = [] #This where trial-by-trial data is stored
-        header_list = ["SessionTime", "Xcord","Ycord", "Event",
-                       "CorrectionTrial", "SampleStimulus", "CorrectKey",
-                       "StimulusCondition", "TrialSubStage", "TrialTime", 
-                       "TrialSubStageTimer","TrialNum", "NonCPTrialNum",
-                       "DelayDuration", "FeedbackDuration", "SampleFR",
-                       "Subject", "ExpCondition", "TrainingPhase",
-                       "StimulusSetNum", "Date"] # Column headers
-        self.session_data_frame.append(header_list) # First row of matrix is the column headers
-        self.myFile_loc = 'FILL' # To be filled later on after Pig. ID is provided (in set vars func below)
-
-        # Remaining variables to declare
-        self.date = date.today().strftime("%y-%m-%d")
-        self.neutral_feedback_color = "#2596BE" # For the blue circle in pre-training
-        self.background_color = "#7F7F7F" # Background color for trials for all stimuli
-        self.yellow_color = "#E8D24C"
-        self.brown_color = "#31131E"
-
         ## Finally, start the recursive loop that runs the program:
         self.place_birds_in_box()
 
@@ -508,7 +504,6 @@ class MainScreen(object):
                         if d['TrainingSet'] == "0": # Probe stimuli
                             if d['StimulusNum'] == str(probe_stim_number):
                                 self.trial_stimulus_order.append(d)
-                
                 # Add 60 more
                 for iteration in [0,1]: # Run twice
                     while True:
@@ -645,13 +640,11 @@ class MainScreen(object):
             else:
                 self.root.after(60000, lambda: self.ITI())
                 
-        ###
+        ### 
         if self.record_video_bool:
             record_str = "ON"
         else:
             record_str = "OFF"
-            
-        
             
         self.root.bind("<space>", first_ITI) # bind cursor state to "space" key
         self.mastercanvas.create_text(512,374,
@@ -662,8 +655,8 @@ class MainScreen(object):
     ## %% ITI
     # Every trial (including the first) "starts" with an ITI. The ITI function
     # does several different things:
-    #   1) Checks to see if any session constraints have been reached
-    #   2) Resets the hopper and any trial-by-trial variables
+    #   1) Checks to see if any session constraints have been reached (and ends the session if so)
+    #   2) Resets the hopper and any trial-by-trial variables (including RRs)
     #   3) Increases the trial counter by one
     #   4) Moves on to the next trial after a delay
     # 
@@ -723,7 +716,7 @@ class MainScreen(object):
             self.write_comp_data(False) # update data .csv with trial data from the previous trial
             self.trial_stage = 1 # Reset trial substage
             
-            if self.training_phase != 0:
+            if self.training_phase != 0: # If trials differ, grab info for upcoming trial
                 self.trial_info = self.trial_stimulus_order[self.trial_num]
 
             # Increase trial counter by one
@@ -753,7 +746,7 @@ class MainScreen(object):
                 
             # Finally, print terminal feedback "headers" for each event within the next trial
             print(f"\n{'*'*30} Trial {self.trial_num} begins {'*'*30}") # Terminal feedback...
-            print(f"{'Event Type':>30} | Xcord. Ycord. | Stage | Session Time")
+            print(f"{'Event Type':>30} | Xcord.   Ycord. | Stage | Session Time")
         
     #%%  Pre-choice loop 
     """
@@ -766,6 +759,8 @@ class MainScreen(object):
     below to determine what keys should be colored and activated.
     
     Choice phase has 4 sub-stages: 
+    
+    TO-DO: fill in this description of how the trial runs and substages work
 
     """
     def sub_stage_one(self):
@@ -820,15 +815,16 @@ class MainScreen(object):
         if self.training_phase == 0 and self.trial_stage == 2:
             # Build our pre-training nesting oval stimuli
             
+            # TO-DO: First build the receptive field behind the stimulus
             self.mastercanvas.create_oval(417, 283, 584, 450,
-                                          fill = "#2596be",
-                                          outline = "black",
-                                          tag = "pretraining_key")
+                                          fill      = "#2596be",
+                                          outline   = "black",
+                                          tag       = "pretraining_key")
             
             self.mastercanvas.create_oval(500, 365, 502, 367,
-                                          fill = "black",
-                                          outline = "black",
-                                          tag = "pretraining_key")
+                                          fill      = "black",
+                                          outline   = "black",
+                                          tag       = "pretraining_key")
             
             self.mastercanvas.tag_bind("pretraining_key",
                                        "<Button-1>",
@@ -843,12 +839,12 @@ class MainScreen(object):
                                                tag    = "stimulus_key"
                                                )
                 
-                # Receptive field should encompass all shapes (350p diameter rn)
+                # TO-DO: Receptive field should encompass all shapes (350p diameter rn)
                 self.mastercanvas.create_oval(237, 149, 787, 639,
-                                              fill = "",
-                                              outline = "Purple", #"#7F7F7F",
-                                              width = 1, 
-                                              tag = "stimulus_key")
+                                              fill      = "",
+                                              outline   = "Purple", #"#7F7F7F" Add grey...
+                                              width     = 1, 
+                                              tag       = "stimulus_key")
                 
                 self.mastercanvas.tag_bind("stimulus_key",
                                            "<Button-1>",
@@ -859,7 +855,6 @@ class MainScreen(object):
         elif self.training_phase == 2:
             # Binary choice sub-phase 1
             if self.trial_stage == 1:
-
                 # Setup l/r coordinate and image info
                 left_key_data = self.trial_info['left']
                 right_key_data = self.trial_info['right']
@@ -888,22 +883,20 @@ class MainScreen(object):
                 # Receptive field should encompass all shapes (350p diameter rn)
                 # TO-DO: Generate receptive fields around l/r center points
                 self.mastercanvas.create_oval(37, 149, 300, 639,
-                                              fill = "Purple",
-                                              outline = "Purple", #"#7F7F7F",
-                                              width = 1, 
-                                              tag = "left_stimulus_key")
+                                              fill      = "Purple",
+                                              outline   = "Purple", #"#7F7F7F",
+                                              width     = 1, 
+                                              tag       = "left_stimulus_key")
                 
                 
                 # TO-DO: Receptive field for right image
                 self.mastercanvas.create_oval(800, 149, 1000, 639,
-                                              fill = "Purple",
-                                              outline = "Purple", #"#7F7F7F",
-                                              width = 1, 
-                                              tag = "right_stimulus_key")
+                                              fill      = "Purple",
+                                              outline   = "Purple", #"#7F7F7F",
+                                              width     = 1, 
+                                              tag       = "right_stimulus_key")
                 
                 ## Setup tagged functions
-
-                    
                 self.mastercanvas.tag_bind("left_stimulus_key",
                                            "<Button-1>",
                                            lambda event,
@@ -918,7 +911,8 @@ class MainScreen(object):
 
                 
             if self.trial_stage == 2:
-                # Build our pterminal link oval stimuli
+                # Build our terminal link oval stimuli
+                #TO-DO: build receptive field similar to line 816
                 self.mastercanvas.create_oval(417, 283, 584, 450,
                                               fill = "#D5869D",
                                               outline = "black",
@@ -934,11 +928,9 @@ class MainScreen(object):
                                            lambda event,
                                            ks = "pretraining_key": self.key_press(event,
                                                                         ks))
-                
-        
-    
+            
     """ 
-    # Explain what key_press() function does
+    # TO-DO: Explain what key_press() function does
     """
     
     def key_press(self, event, keytag):
@@ -946,7 +938,6 @@ class MainScreen(object):
         if self.training_phase in [0, 1]:
             self.write_data(event, (f"{keytag}_peck"))
             self.button_presses += 1 
-            print(f"RR = {self.trial_RR}\nButton Presses = {self.button_presses}")
             if self.button_presses == self.trial_RR:
                 # Next, cancel the timer (if it exists)
                 try:
@@ -1106,22 +1097,22 @@ class MainScreen(object):
         # organized into a matrix (just a list/vector with two dimensions,
         # similar to a table). This matrix is appended to throughout the 
         # session, then written to a .csv once at the end of the session.
+        
+        # First generate spatial info
         if event != None: 
             x, y = event.x, event.y
-            
+            # Distance from center of stimuli
             if self.training_phase in [0,1]:
                 center_pyth_distance  = ((x - self.image_center[0]) ** 2 + (y - self.image_center[1]) ** 2) ** 0.5
                 left_pyth_dist, right_pyth_dist = "NA", "NA"
             elif self.training_phase == 2:
                 center_pyth_distance   = ((x - self.image_center[0]) ** 2 + (y - self.image_center[1]) ** 2) ** 0.5
-                left_pyth_dist  = ((x - self.choice_key_coord_dict["left_choice"][0]) ** 2 + (y - self.choice_key_coord_dict["left_choice"][1]) ** 2) ** 0.5       
-                right_pyth_dist = ((x - self.choice_key_coord_dict["right_choice"][0]) ** 2 + (y - self.choice_key_coord_dict["right_choice"][1]) ** 2) ** 0.5   
-                
-                
+                left_pyth_dist         = ((x - self.choice_key_coord_dict["left_choice"][0]) ** 2 + (y - self.choice_key_coord_dict["left_choice"][1]) ** 2) ** 0.5       
+                right_pyth_dist        = ((x - self.choice_key_coord_dict["right_choice"][0]) ** 2 + (y - self.choice_key_coord_dict["right_choice"][1]) ** 2) ** 0.5   
         else: # There are certain data events that are not pecks.
-            x, y, pyth_distance, left_pyth_dist, right_pyth_dist = "NA", "NA", "NA", "NA", "NA"
+            x, y, center_pyth_distance, left_pyth_dist, right_pyth_dist = "NA", "NA", "NA", "NA", "NA"
         
-        # Stimuli used 
+        # Next document stimuli used 
         if self.training_phase == 0:
             center_stimulus = "control_circle"
             trial_type = "pretraining"
@@ -1130,7 +1121,6 @@ class MainScreen(object):
             subphase1_RR, subphase1_left_button_presses, subphase1_right_button_presses = "NA", "NA", "NA"
             subphase2_RR = self.trial_RR 
             subphase2_button_presses = self.button_presses
-            
             
         elif self.training_phase == 1:
             trial_type      = self.trial_info['trial_type']
@@ -1158,31 +1148,37 @@ class MainScreen(object):
             subphase2_RR = self.terminal_link_trial_RR 
             subphase2_button_presses = self.terminal_link_button_presses
             
-
-            
-                
-                # {'left': {'Name': 'Probe1.jpg', 'TrainingSet': '0', 'StimulusNum': '1'},
-                #  'right': {'Name': 'Probe2.jpg', 'TrainingSet': '0', 'StimulusNum': '2'},
-                #  'trial_type': 'PvP'}
-            
-
-        print(f"{outcome:>30} | x: {x: ^3} y: {y:^3} | {self.trial_stage:^5} | {str(datetime.now() - self.start_time)}")
+        # Print terminal feedback
+        print(f"{outcome:>30} | x: {x: ^4} y: {y:^4} | {self.trial_stage:^5} | {str(datetime.now() - self.start_time)}")
         
         self.session_data_frame.append([
+            
+            # First data that allows us to ID the file
+            self.subject_ID, # Name of subject (same across datasheet)
+            date.today(), # Today's date as "MM-DD-YYYY"
+            self.training_phase, # the phase of training as a number (0-2)
+            self.training_phase_name_list[self.training_phase].split(": ")[1], # Training phase name 
+            
+            # Then important within-session data
             str(datetime.now() - self.start_time), # SessionTime as datetime object
+            self.trial_num, # Trial count within session (1 - max # trials)
+            trial_type, # Trial type
             outcome, # Type of event (e.g., background peck, target presentation, session end, etc.)
-            # Spatial
+            
+            # Temporal info
+            self.trial_stage, # Substage within each trial (1-2)
+            round((time() - self.trial_start - (self.ITI_duration/1000)), 5), # Time into this trial minus ITI (if session ends during ITI, will be negative)
+            round((time() - self.trial_substage_start_time), 5), # Trial substage timer
+            self.ITI_duration,  # ITI differs 
+            
+            # Spatial peck info 
             x, # X coordinate of a peck
             y, # Y coordinate of a peck
             center_pyth_distance, # Pythagorean dist. b/n center stimulus and this peck
             left_pyth_dist, # Pythagorean dist. b/n left choice stimulus and this peck
             right_pyth_dist, # Pythagorean dist. b/n right choice stimulus and this peck
-            # Temporal
-            round((time() - self.trial_start - (self.ITI_duration/1000)), 5), # Time into this trial minus ITI (if session ends during ITI, will be negative)
-            round((time() - self.trial_substage_start_time), 5), # Trial substage timer
-            self.ITI_duration,  #ITI
-            # Stimuli used 
-            trial_type,
+
+            # Stimuli used w/ independent responses
             center_stimulus,
             left_stim,
             left_stim_training_set,
@@ -1191,42 +1187,30 @@ class MainScreen(object):
             right_stim_training_set, 
             right_stim_num, 
             
-            # Button presses
+            # Button press info
             subphase1_RR,
             subphase1_left_button_presses,
             subphase1_right_button_presses,
             subphase2_RR,
             subphase2_button_presses,
-        
-            self.training_phase, # Training phase num 0 - 2
-            trial_type, # Trial type
-            self.trial_stage, # Substage within each trial (1-2)
             
-
-            
-            self.trial_num, # Trial count within session (1 - max # trials)
-
-            self.trial_FR, # FR of a specific trial
-            self.subject_ID, # Name of subject (same across datasheet)
-            self.record_data,
-            date.today(), # Today's date as "MM-DD-YYYY"
-            
-            self.subject_ID = subject_ID # Subject Name
-            self.record_data = record_data # T/F record data
-            self.data_folder_directory = data_folder_directory
-            self.training_phase = training_phase # the phase of training as a number (0-2)
-            self.training_phase_name_list = training_phase_name_list 
-            self.record_video_bool = record_video_bool # T/F
-            
+            # Video info
+            self.record_video_bool, # Video recording 0/1
+            "NA", # TO-DO: video_directory
             ])
         
-        header_list = ["SessionTime", "Xcord","Ycord", "Event",
-                       "CorrectionTrial", "SampleStimulus", "CorrectKey",
-                       "StimulusCondition", "TrialSubStage", "TrialTime", 
-                       "TrialSubStageTimer","TrialNum", "NonCPTrialNum",
-                       "DelayDuration", "FeedbackDuration", "SampleFR",
-                       "Subject", "ExpCondition", "TrainingPhase",
-                       "StimulusSetNum", "Date"] # Column headers
+        # Repeated here to double-check
+        header_list = ["Subject", "Date", "ExpPhaseNum", "ExpPhaseName", 
+                       "SessionTime", "TrialNum", "TrialType", "EventType",
+                       "TrialSubStage", "TrialTime", "TrialSubStageTimer",
+                       "ITIDuration", "Xcord","Ycord", "CenterPythDist", 
+                       "LeftPythDist", "RightPythDist", "CenterStim",
+                       "LeftStim", "LeftStimTrainingSet", "LeftStimNumber",
+                       "RightStim", "RightStimTrainingSet", "RightStimNumber",
+                       "SubPhase1RR", "SubPhase1LeftButtonPresses",
+                       "SubPhase1RightButtonPresses", "SubPhase2RR",
+                       "SubPhase2ButtonPresses", "VideoRecorded",
+                       "VideoFileName"]
 
         
     def write_comp_data(self, SessionEnded):
@@ -1260,4 +1244,5 @@ except:
         rpi_board.set_PWM_frequency(servo_GPIO_num,
                                     False)
         rpi_board.stop()
+        # TO-DO: send stop command to video recording if the program crashes
 
