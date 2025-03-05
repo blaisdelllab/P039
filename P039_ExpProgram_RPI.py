@@ -680,10 +680,10 @@ class MainScreen(object):
             
         # Stop recording if we were recording
         if self.currently_recording:
-            # run([
-            #     "./stop_recording.sh",
-            #     str(self.trial_num)
-            # ])
+            run([
+                "./stop_recording.sh",
+                str(self.trial_num)
+            ])
             self.currently_recording = False
             self.write_data(None,"video_recording_stopped")
         
@@ -753,19 +753,19 @@ class MainScreen(object):
             
             #Start recording function for choice task (during ITI)
             def start_recording_ITI():
-                # current_date = time.strftime("%Y%m%d")  # Format: YYYYMMDD
-                # base_filename = f"{self.subject_id}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
+                current_date = time.strftime("%Y%m%d")  # Format: YYYYMMDD
+                base_filename = f"{self.subject_id}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
                 
-                # usb_filename = f"{base_filename}_usb.mp4"
-                # vga_filename = f"{base_filename}_vga.mp4"
+                usb_filename = f"{base_filename}_usb.mp4"
+                vga_filename = f"{base_filename}_vga.mp4"
                 
-                # # Start recording with the generated filenames
-                # run([
-                #     "./start_recording.sh",
-                #     str(self.trial_num),
-                #     usb_filename,
-                #     vga_filename
-                # ])
+                # Start recording with the generated filenames
+                run([
+                    "./start_recording.sh",
+                    str(self.trial_num),
+                    usb_filename,
+                    vga_filename
+                ])
                 self.currently_recording = True
                 self.write_data(None,"video_recording_started")
                 self.root.after(3*1000, self.sub_stage_one)
@@ -813,13 +813,13 @@ class MainScreen(object):
                 usb_filename = f"{base_filename}_usb.mp4"
                 vga_filename = f"{base_filename}_vga.mp4"
                 
-                # Start recording with the generated filenames
-                # run([
-                #     "./start_recording.sh",
-                #     str(self.trial_num),
-                #     usb_filename,
-                #     vga_filename
-                # ])
+                #Start recording with the generated filenames
+                run([
+                    "./start_recording.sh",
+                    str(self.trial_num),
+                    usb_filename,
+                    vga_filename
+                ])
                 self.currently_recording = True
                 self.write_data(None,"video_recording_started")
         
