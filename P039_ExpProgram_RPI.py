@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-03-03
+Last updated: 2025-03-05
 
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
@@ -194,7 +194,7 @@ class ExperimenterControlPanel(object):
         ##  Next, setup variables within the control panel
         # Subject ID
         # TO-DO: Assign list when birds are picked.
-        self.pigeon_name_list = ["Bird1", "Bird2", "Bird3", "Bird4"]
+        self.pigeon_name_list = ["Peach", "Wario", "Jagger", "Herriot"]
         self.pigeon_name_list.sort() # This alphabetizes the list
         self.pigeon_name_list.insert(0, "TEST")
         
@@ -346,10 +346,10 @@ class MainScreen(object):
         # TO-DO: Assign and expand when birds are picked.
         dict_of_subject_assignments = {
             "TEST": 1,
-            "Bird1": 1,
-            "Bird2": 2,
-            "Bird3": 3,
-            "Bird4": 4
+            "Peach": 1,
+            "Wario": 2,
+            "Jagger": 3,
+            "Herriot": 4
             }
         
         self.control_condition = dict_of_subject_assignments[self.subject_ID]
