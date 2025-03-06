@@ -75,7 +75,7 @@ from datetime import datetime, timedelta, date
 from sys import setrecursionlimit, path as sys_path
 from tkinter import Toplevel, Canvas, BOTH, TclError, Tk, Label, Button, \
      StringVar, OptionMenu, IntVar, Radiobutton
-from time import time, sleep
+from time import time, sleep, strftime
 from os import getcwd, popen, mkdir, path as os_path
 from PIL import ImageTk, Image  
 from random import choice, shuffle
@@ -104,17 +104,12 @@ try:
         # Import additional libraries...
         import pigpio # import pi, OUTPUT
         import csv
-        #...including art scripts
-        sys_path.insert(0, str(os_path.expanduser('~')+"/Desktop/Experiments/P033/"))
-        import polygon_fill
         
         # Setup GPIO numbers (NOT PINS; gpio only compatible with GPIO num)
         servo_GPIO_num = 2
         hopper_light_GPIO_num = 13
         house_light_GPIO_num = 21
-        # LEDs through the IoT relay device
-        
-        # TO-DO: add in any camera-specific libraries or functions below
+        string_LED_GPIO_num = 5 # Only in box 1
         
         # Setup use of pi()
         rpi_board = pigpio.pi()
@@ -125,6 +120,8 @@ try:
         rpi_board.set_mode(hopper_light_GPIO_num,
                            pigpio.OUTPUT) # Hopper light LED...
         rpi_board.set_mode(house_light_GPIO_num,
+                           pigpio.OUTPUT) # House light LED...
+        rpi_board.set_mode(string_LED_GPIO_num,
                            pigpio.OUTPUT) # House light LED...
         
         # Setup the servo motor 
@@ -369,7 +366,8 @@ class MainScreen(object):
         self.trial_num = 0 # counter for current trial in session
         self.trial_stage = 0 # Trial substage (we have 2: blank screen/stimulus presentation or choice trial/terminal link)
         self.max_number_of_reinforced_trials = 90 # Max number of trials within a session (three trials per stimulus)
-        self.currently_recording = False  # Describes if the cameras are currently recording (never for first ITI)
+        self.currently_recording = False  # Describes if the cameras are currently recording (never for first ITI)\
+        self.trial_type = "NA" # Does not change if pretraining
         
         # Timing variables
         self.auto_reinforcer_timer = 30 * 1000 # Time (ms) before reinforcement for AS
@@ -419,7 +417,7 @@ class MainScreen(object):
         self.root.bind("<Escape>", self.exit_program) # bind exit program to the "esc" key
         
         # If the version is the one running in the boxes, run some independent processes
-        if operant_box_version: 
+        if operant_box_version:
             # Keybind relevant keys
             self.cursor_visible = True # Cursor starts on...
             self.change_cursor_state() # turn off cursor UNCOMMENT
@@ -461,6 +459,10 @@ class MainScreen(object):
             self.mastercanvas.delete("all")
             self.root.unbind("<space>")
             self.start_time = datetime.now() # Set start time
+            
+            if operant_box_version:
+                rpi_board.write(string_LED_GPIO_num,
+                    True) # Turn on the LED strings
             
             # First set up the path to the stimulus identity .csv document
             stimuli_csv_path = "P039a_Stimuli/P039a_stimuli_assignments.csv"
@@ -529,7 +531,7 @@ class MainScreen(object):
                 
                 # Finally, load the image files into the dictionary:
                 for i in self.trial_stimulus_order:
-                    i["img"] = ImageTk.PhotoImage(Image.open(f'P039a_stimuli/{i["Name"]}'))
+                    i["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["Name"]}'))
                     if int(i["TrainingSet"]) == 0:
                         i["trial_type"] = "probe"
                     else:
@@ -628,20 +630,20 @@ class MainScreen(object):
                         
                 # Finally, load the image files into the dictionary:
                 for i in self.trial_stimulus_order:
-                    i["left"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_stimuli/{i["left"]["Name"]}'))
-                    i["right"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_stimuli/{i["right"]["Name"]}'))
+                    i["left"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["left"]["Name"]}'))
+                    i["right"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["right"]["Name"]}'))
             
             # After the order of stimuli per trial is determined, there are a 
             # couple other things that neeed to occur during the first ITI:
             if self.subject_ID == "TEST": # If test, don't worry about ITI delays
-                self.ITI_duration = 1 * 1000
+                self.ITI_duration = 5 * 1000
                 self.hopper_duration = 2 * 1000
                 self.trial_delay_duration = 1 * 1000
                 self.root.after(1, lambda: self.ITI())
             else:
                 self.root.after(60000, lambda: self.ITI())
                 
-        ### 
+        ### hopper_light_GPIO_num
         if self.record_video:
             record_str = "ON"
         else:
@@ -728,6 +730,7 @@ class MainScreen(object):
             
             if self.training_phase != 0: # If trials differ, grab info for upcoming trial
                 self.trial_info = self.trial_stimulus_order[self.trial_num]
+                self.trial_type = self.trial_info['trial_type']
 
             # Increase trial counter by one
             self.trial_num += 1
@@ -745,6 +748,7 @@ class MainScreen(object):
                 self.left_button_presses   = 0
                 self.right_button_presses  = 0
                 # Terminal link RR
+                # Terminal link RR
                 self.terminal_link_trial_RR = choice(list(range(7, 13))) # RR10
                 self.terminal_link_button_presses = 0
                 
@@ -753,8 +757,8 @@ class MainScreen(object):
             
             #Start recording function for choice task (during ITI)
             def start_recording_ITI():
-                current_date = time.strftime("%Y%m%d")  # Format: YYYYMMDD
-                base_filename = f"{self.subject_id}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
+                current_date = strftime("%Y%m%d")  # Format: YYYYMMDD
+                base_filename = f"{self.subject_ID}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
                 
                 usb_filename = f"{base_filename}_usb.mp4"
                 vga_filename = f"{base_filename}_vga.mp4"
@@ -807,8 +811,8 @@ class MainScreen(object):
             rpi_board.write(house_light_GPIO_num,
                             True) # Turn on the houselight
             if self.record_video and self.training_phase in [0,1]:
-                current_date = time.strftime("%Y%m%d")  # Format: YYYYMMDD
-                base_filename = f"{self.subject_id}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
+                current_date = strftime("%Y%m%d")  # Format: YYYYMMDD
+                base_filename = f"{self.subject_ID}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
                 
                 usb_filename = f"{base_filename}_usb.mp4"
                 vga_filename = f"{base_filename}_vga.mp4"
@@ -1062,7 +1066,7 @@ class MainScreen(object):
         # reinforcement interval (i.e., hopper down duration)
         self.clear_canvas()
         
-        # If key is operantly reinforced
+        # If key is operantly reinforcedhopper_light_GPIO_num
         if key_pecked:
             self.write_data(None, "reinforcer_provided")
             if not operant_box_version or self.subject_ID == "TEST":
