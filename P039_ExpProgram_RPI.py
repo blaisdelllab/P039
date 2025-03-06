@@ -190,8 +190,7 @@ class ExperimenterControlPanel(object):
         self.control_window.title("P039 Control Panel")
         ##  Next, setup variables within the control panel
         # Subject ID
-        # TO-DO: Assign list when birds are picked.
-        self.pigeon_name_list = ["Peach", "Wario", "Jagger", "Herriot"]
+        self.pigeon_name_list = ["Peach","Wario", "Jagger", "Herriot"]
         self.pigeon_name_list.sort() # This alphabetizes the list
         self.pigeon_name_list.insert(0, "TEST")
         
@@ -340,7 +339,6 @@ class MainScreen(object):
         # G4 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
         
         # This counterbalancing schedule was maintained across multiple sessions.
-        # TO-DO: Assign and expand when birds are picked.
         dict_of_subject_assignments = {
             "TEST": 1,
             "Peach": 1,
@@ -366,8 +364,12 @@ class MainScreen(object):
         self.trial_num = 0 # counter for current trial in session
         self.trial_stage = 0 # Trial substage (we have 2: blank screen/stimulus presentation or choice trial/terminal link)
         self.max_number_of_reinforced_trials = 90 # Max number of trials within a session (three trials per stimulus)
-        self.currently_recording = False  # Describes if the cameras are currently recording (never for first ITI)\
         self.trial_type = "NA" # Does not change if pretraining
+        
+        # Video recording variables
+        self.currently_recording = False  # Describes if the cameras are currently recording (never for first ITI)
+        self.top_filename  = "NA"
+        self.side_filename = "NA"
         
         # Timing variables
         self.auto_reinforcer_timer = 30 * 1000 # Time (ms) before reinforcement for AS
@@ -405,7 +407,7 @@ class MainScreen(object):
                        "SubPhase1RR", "SubPhase1LeftButtonPresses",
                        "SubPhase1RightButtonPresses", "SubPhase2RR",
                        "SubPhase2ButtonPresses", "VideoRecorded",
-                       "VideoFileName"] # Column headers
+                       "TopVideoFileName", "SideVideoFileName"] # Column headers
         self.session_data_frame.append(header_list) # First row of matrix is the column headers
         self.myFile_loc = 'FILL' # To be filled later on after Pig. ID is provided (in set vars func below)
 
@@ -654,7 +656,43 @@ class MainScreen(object):
                                       fill="white",
                                       font="Times 25 italic bold",
                                       text=f" Place bird in box, then press space\n\n Experiment: P039a  \n Subject: {self.subject_ID} \n Training Phase {self.training_phase_name_list[self.training_phase]} \n Cameras: {record_str}")
-                
+    
+    ## Video recording functions to start and stop recording from both top and side both cameras
+    
+    def start_recording_video(self):
+        current_date = strftime("%Y-%m-%d")  # Format: YYYYMMDD
+        base_filename = f"{self.subject_ID}_Phase{self.training_phase}_{current_date}_Trial{self.trial_num}-{self.trial_type}"
+        subject_folder_directory = f"Desktop/Videos/{self.subject_ID}"
+        
+        self.top_filename  = f"{base_filename}_TOPcam.mp4"
+        self.side_filename = f"{base_filename}_SIDEcam.mp4"
+        
+        # Make subject folder if it doesn't already exist
+        try:
+            mkdir(str(os_path.expanduser('~')) + "/" + subject_folder_directory)
+        except FileExistsError:
+            pass
+        
+        #Start recording with the generated filenames
+        run([
+            "./start_recording.sh",
+            f"{subject_folder_directory}/{self.top_filename}",
+            f"{subject_folder_directory}/{self.side_filename}"
+        ])
+        self.currently_recording = True
+        self.write_data(None,"video_recording_started")
+        
+    
+    def stop_recording_video(self):
+        run([
+            "./stop_recording.sh",
+            str(self.trial_num)
+        ])
+        self.currently_recording = False
+        self.write_data(None,"video_recording_stopped")
+    
+            
+    
     ## %% ITI
     # Every trial (including the first) "starts" with an ITI. The ITI function
     # does several different things:
@@ -682,14 +720,10 @@ class MainScreen(object):
             
         # Stop recording if we were recording
         if self.currently_recording:
-            run([
-                "./stop_recording.sh",
-                str(self.trial_num)
-            ])
-            self.currently_recording = False
-            self.write_data(None,"video_recording_stopped")
+            self.stop_recording_video()
+            self.top_filename  = "NA"
+            self.side_filename = "NA"
         
-
         # First, check to see if any session limits have been reached (e.g.,
         # if the max time or reinforcers earned limits are reached).
         if self.trial_num > self.max_number_of_reinforced_trials: # Maybe -1 (89)>
@@ -757,21 +791,7 @@ class MainScreen(object):
             
             #Start recording function for choice task (during ITI)
             def start_recording_ITI():
-                current_date = strftime("%Y%m%d")  # Format: YYYYMMDD
-                base_filename = f"{self.subject_ID}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
-                
-                usb_filename = f"{base_filename}_usb.mp4"
-                vga_filename = f"{base_filename}_vga.mp4"
-                
-                # Start recording with the generated filenames
-                run([
-                    "./start_recording.sh",
-                    str(self.trial_num),
-                    usb_filename,
-                    vga_filename
-                ])
-                self.currently_recording = True
-                self.write_data(None,"video_recording_started")
+                self.start_recording_video()
                 self.root.after(3*1000, self.sub_stage_one)
                 
             # Next, set a delay timer to proceed to the next trial
@@ -810,23 +830,8 @@ class MainScreen(object):
         if operant_box_version:
             rpi_board.write(house_light_GPIO_num,
                             True) # Turn on the houselight
-            if self.record_video and self.training_phase in [0,1]:
-                current_date = strftime("%Y%m%d")  # Format: YYYYMMDD
-                base_filename = f"{self.subject_ID}_{self.training_phase}_{self.trial_type}_{self.trial_num}_{current_date}"
-                
-                usb_filename = f"{base_filename}_usb.mp4"
-                vga_filename = f"{base_filename}_vga.mp4"
-                
-                #Start recording with the generated filenames
-                run([
-                    "./start_recording.sh",
-                    str(self.trial_num),
-                    usb_filename,
-                    vga_filename
-                ])
-                self.currently_recording = True
-                self.write_data(None,"video_recording_started")
-        
+            if self.record_video and self.training_phase in [0,1]:  # Video recording for 2 starts during ITI
+                self.start_recording_video()
         self.build_keys()
         if self.training_phase in [0,1]:
             self.root.after(self.trial_delay_duration, self.sub_stage_two)
@@ -868,8 +873,6 @@ class MainScreen(object):
         # Pre-training
         if self.training_phase == 0 and self.trial_stage == 2:
             # Build our pre-training nesting oval stimuli
-            
-            # TO-DO: First build the receptive field behind the stimulus
             self.mastercanvas.create_oval(392, 258, 609, 475,
                                           fill = "#7F7F7F",
                                           outline = "",
@@ -921,23 +924,6 @@ class MainScreen(object):
                 left_key_data = self.trial_info['left']
                 right_key_data = self.trial_info['right']
                 
-                # Receptive field should encompass all shapes (350p diameter rn)
-                # COMPLETED: Generate receptive fields around l/r center points
-                #  self.mastercanvas.create_oval(10, 199, 490, 519,
-                #                               fill      = "Purple",
-                #                               outline   = "#7F7F7F", #"Purple"
-                #                               width     = 1, 
-                #                               tag       = "left_stimulus_key")
-                
-                
-                # # COMPLETED: Receptive field for right image
-                # self.mastercanvas.create_oval(540, 199, 1020, 519,
-                #                               fill      = "Purple",
-                #                               outline   = "Purple", #"#7F7F7F",
-                #                               width     = 1, 
-                #                               tag       = "right_stimulus_key")
-                
-                    
                 # Left image
                 self.mastercanvas.create_image(*self.choice_key_coord_dict["left_choice"],
                                                anchor   = 'center',
@@ -974,7 +960,6 @@ class MainScreen(object):
                 
             if self.trial_stage == 2:
                 # Build our terminal link oval stimuli
-                #TO-DO: build receptive field similar to line 816
                 self.mastercanvas.create_oval(392, 258, 609, 475,
                                               fill = "#7F7F7F",
                                               outline = "",
@@ -1091,7 +1076,7 @@ class MainScreen(object):
             rpi_board.set_servo_pulsewidth(servo_GPIO_num,
                                            hopper_up_val) # Move hopper to up position
             
-        self.root.after(self.hopper_duration, lambda: self.ITI())
+        ITI_timer = self.root.after(self.hopper_duration, lambda: self.ITI())
         
 
     # %% Outside of the main loop functions, there are several additional
@@ -1141,6 +1126,8 @@ class MainScreen(object):
                                 False) # turn off hopper light
                 rpi_board.write(house_light_GPIO_num,
                                 False) # Turn off the house light
+                rpi_board.write(string_LED_GPIO_num,
+                                False) # Turn off the LED lights
                 rpi_board.set_servo_pulsewidth(servo_GPIO_num,
                                                hopper_down_val) # set hopper to down state
                 sleep(1) # Sleep for 1 s
@@ -1153,12 +1140,16 @@ class MainScreen(object):
                 # Next, cancel the timer (if it exists)
                 try:
                     self.root.after_cancel(self.auto_timer)
+                    self.root.after_cancel(self.ITI_timer)
                 except AttributeError:
                     pass
-                self.provide_food(True)
 
                 if not self.cursor_visible:
                     	self.change_cursor_state() # turn cursor back on, if applicable
+                        
+                if self.record_video and self.currently_recording:
+                    self.stop_recording_video()
+                    
             self.write_comp_data(True) # write data for end of session
             
             if event not in ["TrialsCompleted", "TimeCompleted"]: # If not, black screen by default
@@ -1169,8 +1160,6 @@ class MainScreen(object):
         self.clear_canvas()
         other_exit_funcs()
         print("\n You may now exit the terminal and operater windows now.")
-        if operant_box_version:
-            polygon_fill.main(self.subject_ID) # call paint object
         
     
     def write_data(self, event, outcome):
@@ -1277,7 +1266,8 @@ class MainScreen(object):
             
             # Video info
             self.record_video, # Video recording 0/1
-            "NA", # TO-DO: video_directory
+            self.top_filename, # Recording file name
+            self.side_filename # Recording file name
             ])
         
         # Repeated here to double-check
@@ -1291,7 +1281,7 @@ class MainScreen(object):
                        "SubPhase1RR", "SubPhase1LeftButtonPresses",
                        "SubPhase1RightButtonPresses", "SubPhase2RR",
                        "SubPhase2ButtonPresses", "VideoRecorded",
-                       "VideoFileName"]
+                       "TopVideoFileName", "SideVideoFileName"]
 
         
     def write_comp_data(self, SessionEnded):
@@ -1325,5 +1315,9 @@ except:
         rpi_board.set_PWM_frequency(servo_GPIO_num,
                                     False)
         rpi_board.stop()
-        # TO-DO: send stop command to video recording if the program crashes
+        # Stop command to video recording if the program crashes
+        if self.record_video and self.currently_recording:
+            self.stop_recording_video()
+            
+            
 
