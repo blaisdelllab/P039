@@ -666,7 +666,6 @@ class MainScreen(object):
         # Make subject folder if it doesn't already exist
         makedirs(f"{os_path.expanduser('~')}/{file_parent_directory}", exist_ok = True)
 
-        
         # Then we can name files
         base_filename = f"{self.subject_ID}_Phase{self.training_phase}_{current_date}_Trial{self.trial_num}-{self.trial_type}"
         
