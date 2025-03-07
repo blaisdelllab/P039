@@ -3,6 +3,8 @@
 # Shell script called to use the ffmpeg library to start recording from
 # the two webcams connected to the RPi
 
+# Last updated 2025-03-06
+
 # Ensure two arguments are provided
 if [ $# -ne 2 ]; then
     echo "Need arguments: $0 <top_filename> <side_filename>"
