@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-03-06
+Last updated: 2025-03-05
 
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
@@ -76,7 +76,7 @@ from sys import setrecursionlimit, path as sys_path
 from tkinter import Toplevel, Canvas, BOTH, TclError, Tk, Label, Button, \
      StringVar, OptionMenu, IntVar, Radiobutton
 from time import time, sleep, strftime
-from os import getcwd, popen, mkdir, path as os_path
+from os import getcwd, popen, mkdir, makedirs, path as os_path
 from PIL import ImageTk, Image  
 from random import choice, shuffle
 from subprocess import run
@@ -660,25 +660,28 @@ class MainScreen(object):
     ## Video recording functions to start and stop recording from both top and side both cameras
     
     def start_recording_video(self):
-        current_date = strftime("%Y-%m-%d")  # Format: YYYYMMDD
-        base_filename = f"{self.subject_ID}_Phase{self.training_phase}_{current_date}_Trial{self.trial_num}-{self.trial_type}"
-        subject_folder_directory = f"Desktop/Videos/{self.subject_ID}"
+        # First, we need to set up the save directories to organize video files
+        current_date = strftime("%Y-%m-%d")  # Format: YYYY-MM-DD
+        file_parent_directory = f"Desktop/Videos/{self.subject_ID}/Phase{self.training_phase}/{self.subject_ID}_{current_date}"
+        # Make subject folder if it doesn't already exist
+        makedirs(f"{os_path.expanduser('~')}/{file_parent_directory}", exist_ok = True)
+
         
+        # Then we can name files
+        base_filename = f"{self.subject_ID}_Phase{self.training_phase}_{current_date}_Trial{self.trial_num}-{self.trial_type}"
+        
+        # Differentiate top/side cam filenames
         self.top_filename  = f"{base_filename}_TOPcam.mp4"
         self.side_filename = f"{base_filename}_SIDEcam.mp4"
         
-        # Make subject folder if it doesn't already exist
-        try:
-            mkdir(str(os_path.expanduser('~')) + "/" + subject_folder_directory)
-        except FileExistsError:
-            pass
-        
-        #Start recording with the generated filenames
+        #Start recording with the generated filenames by calling shell script
         run([
             "./start_recording.sh",
-            f"{subject_folder_directory}/{self.top_filename}",
-            f"{subject_folder_directory}/{self.side_filename}"
+            f"{file_parent_directory}/{self.top_filename}", # $1 .sh argument
+            f"{file_parent_directory}/{self.side_filename}" # $2 .sh argument
         ])
+        
+        # Then set local .py variables and write data
         self.currently_recording = True
         self.write_data(None,"video_recording_started")
         
@@ -726,7 +729,7 @@ class MainScreen(object):
         
         # First, check to see if any session limits have been reached (e.g.,
         # if the max time or reinforcers earned limits are reached).
-        if self.trial_num > self.max_number_of_reinforced_trials: # Maybe -1 (89)>
+        if self.trial_num >= self.max_number_of_reinforced_trials: 
             print("Trial max reached")
             self.exit_program("TrialsCompleted")
             
@@ -778,10 +781,9 @@ class MainScreen(object):
             elif self.training_phase == 2:
                 self.ITI_duration    = 20 * 1000
                 # Choice Task RR
-                self.choice_trial_RR       = 10 # RR10
+                self.choice_trial_RR       = 10 # FR10
                 self.left_button_presses   = 0
                 self.right_button_presses  = 0
-                # Terminal link RR
                 # Terminal link RR
                 self.terminal_link_trial_RR = choice(list(range(7, 13))) # RR10
                 self.terminal_link_button_presses = 0
@@ -1137,9 +1139,13 @@ class MainScreen(object):
                                             False)
                 rpi_board.stop() # Kill RPi board
                 
-                # Next, cancel the timer (if it exists)
+                # Next, cancel the timers (if tjey exists)
                 try:
                     self.root.after_cancel(self.auto_timer)
+                except AttributeError:
+                    pass
+                    
+                try:
                     self.root.after_cancel(self.ITI_timer)
                 except AttributeError:
                     pass
