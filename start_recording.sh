@@ -21,7 +21,7 @@ FRAME_RATE="20"
 
 # Start recording from USB and VGA cameras indefinitely
 ffmpeg -f v4l2 -video_size $RESOLUTION -framerate $FRAME_RATE -i /dev/video0 -y "$TOP_FILE" > /dev/null 2>&1 &
-ffmpeg -f v4l2 -i /dev/video2 -y "$SIDE_FILE" > /dev/null 2>&1 &
+ffmpeg -f v4l2 -video_size $RESOLUTION -framerate $FRAME_RATE -i /dev/video2 -y "$SIDE_FILE" > /dev/null 2>&1 &
 
 exit 0
  
