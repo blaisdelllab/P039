@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-03-06
+Last updated: 2025-03-10
 
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
@@ -772,14 +772,19 @@ class MainScreen(object):
             self.trial_num += 1
             
             # Setup variable ITI and RR
-            if self.training_phase in [0,1]:
+            if self.training_phase == 0:
                 self.ITI_duration    = choice(list(range(10,21))) * 1000
                 self.trial_RR        = choice(list(range(3, 8))) # RR5
+                self.button_presses  = 0  
+                
+            elif self.training_phase == 1: 
+                self.ITI_duration    = choice(list(range(10,21))) * 1000
+                self.trial_RR        = choice(list(range(7, 13))) # RR10
                 self.button_presses  = 0
                 
             elif self.training_phase == 2:
                 self.ITI_duration    = 20 * 1000
-                # Choice Task RR
+                # Choice Task FR
                 self.choice_trial_RR       = 10 # FR10
                 self.left_button_presses   = 0
                 self.right_button_presses  = 0
