@@ -208,9 +208,9 @@ class ExperimenterControlPanel(object):
         Label(self.control_window,
               text = "Select phase:").pack()
         self.training_phase_variable = IntVar()
-        self.training_phase_name_list = ["1: Pre-training",
-                                         "2: Autoshaping/Instrumental",
-                                         "3: Choice Task"]
+        self.training_phase_name_list = ["0: Pre-training",
+                                         "1: Autoshaping/Instrumental",
+                                         "2: Choice Task"]
         for t_name in self.training_phase_name_list:
             Radiobutton(self.control_window,
                         variable = self.training_phase_variable,
