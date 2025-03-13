@@ -675,7 +675,7 @@ class MainScreen(object):
         
         #Start recording with the generated filenames by calling shell script
         run([
-            "./start_recording.sh",
+            str(os_path.expanduser('~')+"/Desktop/Video_Recording_Software/start_recording.sh"),
             f"{file_parent_directory}/{self.top_filename}", # $1 .sh argument
             f"{file_parent_directory}/{self.side_filename}" # $2 .sh argument
         ])
@@ -687,7 +687,7 @@ class MainScreen(object):
     
     def stop_recording_video(self):
         run([
-            "./stop_recording.sh",
+            str(os_path.expanduser('~')+"/Desktop/Video_Recording_Software/stop_recording.sh"),
             str(self.trial_num)
         ])
         self.currently_recording = False
