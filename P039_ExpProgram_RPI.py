@@ -1168,9 +1168,9 @@ class MainScreen(object):
             print("\n GUI window exited")
             
         self.clear_canvas()
-	try:
-		other_exit_funcs()
-	except AttributeError:
+        try:
+                other_exit_funcs()
+        except AttributeError:
 		print("\n Error exiting experimental mainscreen.")
         print("\n You may now exit the terminal and operater windows now.")
         
