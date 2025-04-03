@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-03-13
+Last updated: 2025-04-03
 
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
@@ -61,6 +61,8 @@ procedure and apparatus.
     was regulated on a quasi-random basis; the same stimulus was never presented 
     on more than three consecutive trials. Phase 2 sessions concluded after 80 trials
     were completed or 90 minutes elapsed, whichever came first.
+    
+    TODO: Update descriptions of experiments
 """
 
 # Prior to running any code, its conventional to first import relevant 
@@ -190,7 +192,7 @@ class ExperimenterControlPanel(object):
         self.control_window.title("P039 Control Panel")
         ##  Next, setup variables within the control panel
         # Subject ID
-        self.pigeon_name_list = ["Peach","Wario", "Jagger", "Herriot"]
+        self.pigeon_name_list = ["Peach","Wario", "Jagger", "Herriot"] # TODO: Update names
         self.pigeon_name_list.sort() # This alphabetizes the list
         self.pigeon_name_list.insert(0, "TEST")
         
@@ -253,12 +255,12 @@ class ExperimenterControlPanel(object):
                                    text = 'Start program',
                                    bg = "green2",
                                    command = self.build_chamber_screen).pack()
-        # Stop button 
-        self.stop_button = Button(self.control_window,
-                                   text = 'Stop program',
-                                   bg = "red",
-                                   command = self.stop_program
-                                   ).pack()
+        # # Stop button 
+        # self.stop_button = Button(self.control_window,
+        #                            text = 'Stop program',
+        #                            bg = "red",
+        #                            command = self.stop_program
+        #                            ).pack()
         
         # This makes sure that the control panel remains onscreen until exited
         self.control_window.mainloop() # This loops around the CP object
@@ -338,7 +340,7 @@ class MainScreen(object):
         # G3 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
         # G4 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
         
-        # This counterbalancing schedule was maintained across multiple sessions.
+        # This counterbalancing schedule was maintained across multiple sessions. TODO:
         dict_of_subject_assignments = {
             "TEST": 1,
             "Peach": 1,
@@ -365,6 +367,9 @@ class MainScreen(object):
         self.trial_stage = 0 # Trial substage (we have 2: blank screen/stimulus presentation or choice trial/terminal link)
         self.max_number_of_reinforced_trials = 90 # Max number of trials within a session (three trials per stimulus)
         self.trial_type = "NA" # Does not change if pretraining
+        self.correction_trial = False # Differentiates correction trials
+        self.correct_choice = "NA" # Side of correct choice for phase 2
+        self.previous_choice_correct = True # Tracks previous choice
         
         # Video recording variables
         self.currently_recording = False  # Describes if the cameras are currently recording (never for first ITI)
@@ -406,8 +411,9 @@ class MainScreen(object):
                        "RightStim", "RightStimTrainingSet", "RightStimNumber",
                        "SubPhase1RR", "SubPhase1LeftButtonPresses",
                        "SubPhase1RightButtonPresses", "SubPhase2RR",
-                       "SubPhase2ButtonPresses", "VideoRecorded",
-                       "TopVideoFileName", "SideVideoFileName"] # Column headers
+                       "SubPhase2ButtonPresses", "CorrectionTrial",
+                       "CorrectChoice", "VideoRecorded",
+                       "TopVideoFileName", "SideVideoFileName"]
         self.session_data_frame.append(header_list) # First row of matrix is the column headers
         self.myFile_loc = 'FILL' # To be filled later on after Pig. ID is provided (in set vars func below)
 
@@ -543,18 +549,20 @@ class MainScreen(object):
             elif self.training_phase == 2:
                 # Compared one class of control stimuli to 
                 comparison_control_stimuli_class = 5
-                # Remove all non-relevant stimuli; utilize 10 total
+                comparison_control_stimuli = [1, 5]
+                # Remove all non-relevant stimuli; utilize 4 total
                 self.utilized_trials = []
                 for d in self.tenative_stimuli_identity_d_list:
                     if int(d["TrainingSet"]) in [0, comparison_control_stimuli_class]:
-                        self.utilized_trials.append(d)
-                        
-                # Once we collect our 10 choice types, then we need to create
+                        if int(d["StimulusNum"]) in comparison_control_stimuli:
+                            self.utilized_trials.append(d)
+
+                # Once we collect our 4 choice types, then we need to create
                 # permuatations of each combination for trials. These will
                 # be every possible combination of Probe v. Probe, Probe v. 
-                # Control, and Control v. Control for a total of 45 trials.
+                # Control, and Control v. Control for a total of 6 trials.
                 # Furthermore, trials had to flip left/right orientation for 
-                # each combination for a total of 90 unique trials.
+                # each combination for a total of 12 unique trials.
                 
                 permutations = []
                 for i in range(len(self.utilized_trials)):
@@ -563,7 +571,7 @@ class MainScreen(object):
                             permutations.append((self.utilized_trials[i],
                                                  self.utilized_trials[j]))
                             
-                # Permutations is a list of 90 elements, each element contains
+                # Permutations is a list of 12 elements, each element contains
                 # two dictionaries. The first dictionary will be on the left,
                 # the second dictionary on the right. In order to make things 
                 # a bit more clear, we convert this permutations list to a 
@@ -572,7 +580,7 @@ class MainScreen(object):
                 # trial type ("PvP", "PvC", "CvC"), trial number...
                 # For example:
                 # {'left': {'Name': 'Probe1.jpg', 'TrainingSet': '0', 'StimulusNum': '1'},
-                #  'right': {'Name': 'Probe2.jpg', 'TrainingSet': '0', 'StimulusNum': '2'},
+                #  'right': {'Name': 'Probe5.jpg', 'TrainingSet': '0', 'StimulusNum': '5'},
                 #  'trial_type': 'PvP'}
                 
                 self.trial_meta_data_list = []
@@ -593,47 +601,81 @@ class MainScreen(object):
                           'trial_type': trial_type}
                     self.trial_meta_data_list.append(e)
                     
-                # Quasi-randomly shuffle trials such that there are no repeats 
-                # of stimuli
-                while True:
-                    bad_shuffle = False # Innocent until proven otherwise
-                    list_of_trials = deepcopy(self.trial_meta_data_list) # Copy previous list so that we can remove/pop items
-                    shuffle(list_of_trials)
-                    rec_counter = 0
-                    self.trial_stimulus_order = []
-                    while True:
-                        # Two end conditions
-                        if len(list_of_trials) == 1:
-                            self.trial_stimulus_order.append(list_of_trials[0])
-                            break
+                # Shuffle order randomly 
+                shuffle(self.trial_meta_data_list)
+                self.probe_stimulus_order = self.trial_meta_data_list
+                
+                # # Quasi-randomly shuffle trials such that there are no repeats 
+                # # of stimuli
+                # while True:
+                #     bad_shuffle = False # Innocent until proven otherwise
+                #     list_of_trials = deepcopy(self.trial_meta_data_list) # Copy previous list so that we can remove/pop items
+                #     shuffle(list_of_trials)
+                #     rec_counter = 0
+                #     self.probe_stimulus_order = []
+                #     while True:
+                #         # Two end conditions
+                #         if len(list_of_trials) == 1:
+                #             self.probe_stimulus_order.append(list_of_trials[0])
+                #             break
                         
-                        if rec_counter > 20: # Start over if too many recursions
-                            bad_shuffle = True
-                            break
+                #         if rec_counter > 20: # Start over if too many recursions
+                #             bad_shuffle = True
+                #             break
                         
-                        l1 = list_of_trials[0]["left"]["Name"]
-                        r1 = list_of_trials[0]["right"]["Name"]
-                        l2 = list_of_trials[1]["left"]["Name"]
-                        r2 = list_of_trials[1]["right"]["Name"]
+                #         l1 = list_of_trials[0]["left"]["Name"]
+                #         r1 = list_of_trials[0]["right"]["Name"]
+                #         l2 = list_of_trials[1]["left"]["Name"]
+                #         r2 = list_of_trials[1]["right"]["Name"]
                         
-                        if len([l1, r1, l2, r2]) != len(set([l1, r1, l2, r2])): 
-                            i1 = list_of_trials.pop(0)
-                            shuffle(list_of_trials)
-                            list_of_trials.insert(0, i1)
-                            rec_counter += 1
+                #         # Check if repeats (sets contain unique vals)
+                #         if len([l1, r1, l2, r2]) != len(set([l1, r1, l2, r2])): 
+                #             i1 = list_of_trials.pop(0)
+                #             shuffle(list_of_trials)
+                #             list_of_trials.insert(0, i1)
+                #             rec_counter += 1
                             
-                        else: # If no matches, we can preserve the previous pair
-                            self.trial_stimulus_order.append(list_of_trials.pop(0))
-                            rec_counter = 0
+                #         else: # If no matches, we can preserve the previous pair
+                #             self.probe_stimulus_order.append(list_of_trials.pop(0))
+                #             rec_counter = 0
                             
-                    # Break if good shuffle
-                    if bad_shuffle == False:
-                        break # Break while loop
+                #     # Break if good shuffle
+                #     if bad_shuffle == False:
+                #         break # Break while loop
                         
                 # Finally, load the image files into the dictionary:
-                for i in self.trial_stimulus_order:
+                for i in self.probe_stimulus_order:
                     i["left"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["left"]["Name"]}'))
                     i["right"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["right"]["Name"]}'))
+            
+                # After all our experimental probe trials are compiled, we now
+                # insert our side-bias elimination (SBE) trials between them.
+                
+                size_of_SBE_gaps = [4, 5, 6, 7] * 3
+                shuffle(size_of_SBE_gaps)
+                size_of_SBE_gaps.append(2) # Three SBE trials after the last probe
+                
+                self.trial_stimulus_order = [] # Master list
+                for gap in size_of_SBE_gaps:
+                    g_counter = gap
+                    while g_counter > 0:
+                        # Insert specific SBE stimuli for this trial
+                        possible_SBE_stimuli = ["green", "orange", "pink",
+                                                "purple", "red", "brown"] # TODO: double check these colors are differentiable
+                        SBE_trial =  {'left': possible_SBE_stimuli.pop(choice(list(range(0, len(possible_SBE_stimuli))))), # Choose and remove a random color from the list
+                                      'right': possible_SBE_stimuli.pop(choice(list(range(0, len(possible_SBE_stimuli))))), # Choose and remove a random color from the list,
+                                      'trial_type': 'SBE_trial'}
+                        self.trial_stimulus_order.append(SBE_trial)
+                        g_counter -= 1
+                    # Once all SBE gaps are appended for this chunk...
+                    if len(self.probe_stimulus_order) > 0:
+                        self.trial_stimulus_order.append(self.probe_stimulus_order.pop(0))
+                        
+            # Create a list of left/right correct choices for SBE trials
+            self.correct_choice_list = ["left", "right"] * ((len(self.trial_stimulus_order) - 12) // 2)
+            
+            # TODO: Make sure no more than three repeats of one choice type in a row
+            shuffle(self.correct_choice_list)
             
             # After the order of stimuli per trial is determined, there are a 
             # couple other things that neeed to occur during the first ITI:
@@ -763,13 +805,22 @@ class MainScreen(object):
             self.trial_substage_start_time = time() # Reset substage timer
             self.write_comp_data(False) # update data .csv with trial data from the previous trial
             self.trial_stage = 1 # Reset trial substage
-            
-            if self.training_phase != 0: # If trials differ, grab info for upcoming trial
-                self.trial_info = self.trial_stimulus_order[self.trial_num]
-                self.trial_type = self.trial_info['trial_type']
+        
 
             # Increase trial counter by one
-            self.trial_num += 1
+            if self.previous_choice_correct:
+                # Update next trial's info
+                if self.training_phase != 0: # If trials differ, grab info for upcoming trial
+                    self.trial_info = self.trial_stimulus_order[self.trial_num]
+                    self.trial_type = self.trial_info['trial_type']
+                    if self.trial_type == "SBE_trial":
+                        self.correct_choice = self.correct_choice_list[self.trial_num]
+                self.trial_num += 1
+                # Determine correct side
+                
+            else:
+                self.correction_trial = True
+
             
             # Setup variable ITI and RR
             if self.training_phase == 0:
@@ -788,9 +839,6 @@ class MainScreen(object):
                 self.choice_trial_RR       = 10 # FR10
                 self.left_button_presses   = 0
                 self.right_button_presses  = 0
-                # Terminal link RR
-                self.terminal_link_trial_RR = choice(list(range(7, 13))) # RR10
-                self.terminal_link_button_presses = 0
                 
             if self.subject_ID == "TEST":
                 self.ITI_duration = 1 * 1000
@@ -926,42 +974,88 @@ class MainScreen(object):
         elif self.training_phase == 2:
             # Binary choice sub-phase 1
             if self.trial_stage == 1:
-                # Setup l/r coordinate and image info
-                left_key_data = self.trial_info['left']
-                right_key_data = self.trial_info['right']
-                
-                # Left image
-                self.mastercanvas.create_image(*self.choice_key_coord_dict["left_choice"],
-                                               anchor   = 'center',
-                                               image    = left_key_data["img"],
-                                               tag      = "left_stimulus_key" # Because receptive field will manage outcome
-                                               )
-                # Right image
-                self.mastercanvas.create_image(*self.choice_key_coord_dict["right_choice"],
-                                               anchor   = 'center',
-                                               image    = right_key_data["img"],
-                                               tag      = "right_stimulus_key"
-                                               )
-                # Reset background
-                self.mastercanvas.tag_bind("bkgrd",
-                                           "<Button-1>",
-                                           lambda event, 
-                                           event_type = "background_peck": 
-                                               self.write_data(event, event_type))
+                if self.trial_type == "SBE_trial":
+                    # Setup l/r coordinate and image info
+                    left_key_color = self.trial_info['left']
+                    right_key_color = self.trial_info['right']
+                    key_diameter = 100
                     
-                
-                ## Setup tagged functions
-                self.mastercanvas.tag_bind("left_stimulus_key",
-                                           "<Button-1>",
-                                           lambda event,
-                                           ks = "left_stimulus_key": self.key_press(event,
-                                                                        ks))
-                
-                self.mastercanvas.tag_bind("right_stimulus_key",
-                                           "<Button-1>",
-                                           lambda event,
-                                           ks = "right_stimulus_key": self.key_press(event,
-                                                                        ks))
+                    # TODO: Build in receptive fields...
+                    # TODO: Change rectangles to some irregular and novel shape not used in any stimuli
+                    # Left image
+                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["left_choice"][0] - key_diameter,
+                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter,
+                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter,
+                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter,
+                                                       fill = left_key_color, 
+                                                       tag      = "left_stimulus_key" # Because receptive field will manage outcome
+                                                   )
+                    # Right image
+                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["right_choice"][0] - key_diameter,
+                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter,
+                                                       self.choice_key_coord_dict["right_choice"][0] + key_diameter,
+                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter,
+                                                       fill = right_key_color, 
+                                                       tag      = "right_stimulus_key" # Because receptive field will manage outcome
+                                                   )
+                    # Reset background
+                    self.mastercanvas.tag_bind("bkgrd",
+                                               "<Button-1>",
+                                               lambda event, 
+                                               event_type = "background_peck": 
+                                                   self.write_data(event, event_type))
+                        
+                    
+                    ## Setup tagged functions
+                    self.mastercanvas.tag_bind("left_stimulus_key",
+                                               "<Button-1>",
+                                               lambda event,
+                                               ks = "left_stimulus_key": self.key_press(event,
+                                                                            ks))
+                    
+                    self.mastercanvas.tag_bind("right_stimulus_key",
+                                               "<Button-1>",
+                                               lambda event,
+                                               ks = "right_stimulus_key": self.key_press(event,
+                                                                            ks))
+                    
+                else:
+                    # Setup l/r coordinate and image info
+                    left_key_data = self.trial_info['left']
+                    right_key_data = self.trial_info['right']
+                    
+                    # Left image
+                    self.mastercanvas.create_image(*self.choice_key_coord_dict["left_choice"],
+                                                   anchor   = 'center',
+                                                   image    = left_key_data["img"],
+                                                   tag      = "left_stimulus_key" # Because receptive field will manage outcome
+                                                   )
+                    # Right image
+                    self.mastercanvas.create_image(*self.choice_key_coord_dict["right_choice"],
+                                                   anchor   = 'center',
+                                                   image    = right_key_data["img"],
+                                                   tag      = "right_stimulus_key"
+                                                   )
+                    # Reset background
+                    self.mastercanvas.tag_bind("bkgrd",
+                                               "<Button-1>",
+                                               lambda event, 
+                                               event_type = "background_peck": 
+                                                   self.write_data(event, event_type))
+                        
+                    
+                    ## Setup tagged functions
+                    self.mastercanvas.tag_bind("left_stimulus_key",
+                                               "<Button-1>",
+                                               lambda event,
+                                               ks = "left_stimulus_key": self.key_press(event,
+                                                                            ks))
+                    
+                    self.mastercanvas.tag_bind("right_stimulus_key",
+                                               "<Button-1>",
+                                               lambda event,
+                                               ks = "right_stimulus_key": self.key_press(event,
+                                                                            ks))
 
                 
             if self.trial_stage == 2:
@@ -1027,23 +1121,38 @@ class MainScreen(object):
                     self.left_button_presses += 1
                 elif keytag == "right_stimulus_key":
                     self.right_button_presses += 1
+                    
                 # Check if RR has been reached 
                 if self.left_button_presses == self.choice_trial_RR:
                     self.write_data(event, ("left_stimulus_choice"))
-                    self.write_data(event, (f"{self.trial_info['left']['Name'].split('.')[0]}_choice"))
-                    self.sub_stage_two()
+                    if self.trial_type != "SBE_trial":
+                        self.write_data(event, (f"{self.trial_info['left']['Name'].split('.')[0]}_choice"))
+                        self.ITI()
+                        self.previous_choice_correct = True
+                    else: # Check if choice is correct
+                        if self.correct_choice == "left":
+                            self.write_data(event, "correct_choice")
+                            self.provide_food(True)
+                            self.previous_choice_correct = True
+                        else:
+                            self.write_data(event, "incorrect_choice")
+                            self.previous_choice_correct = False
+                            self.ITI()
                 elif self.right_button_presses == self.choice_trial_RR:
                     self.write_data(event, ("right_stimulus_choice"))
-                    self.write_data(event, (f"{self.trial_info['left']['Name'].split('.')[0]}_choice"))
-                    self.sub_stage_two()
-            # Terminal link subphase 2
-            elif self.trial_stage == 2:
-                self.write_data(event, (f"{keytag}_peck"))
-                self.terminal_link_button_presses += 1
-                # Check if RR has been reached 
-                if self.terminal_link_button_presses == self.terminal_link_trial_RR:
-                    self.write_data(event, ("terminal_link_completed"))
-                    self.provide_food(True)
+                    if self.trial_type != "SBE_trial":
+                        self.write_data(event, (f"{self.trial_info['left']['Name'].split('.')[0]}_choice"))
+                        self.ITI()
+                        self.previous_choice_correct = True
+                    else: # Check if choice is correct
+                        if self.correct_choice == "right":
+                            self.write_data(event, "correct_choice")
+                            self.provide_food(True)
+                            self.previous_choice_correct = True
+                        else:
+                            self.write_data(event, "incorrect_choice")
+                            self.previous_choice_correct = False
+                            self.ITI()
 
         
     
@@ -1204,6 +1313,7 @@ class MainScreen(object):
             subphase1_RR, subphase1_left_button_presses, subphase1_right_button_presses = "NA", "NA", "NA"
             subphase2_RR = self.trial_RR 
             subphase2_button_presses = self.button_presses
+            correct_choice = "NA"
             
         elif self.training_phase == 1:
             trial_type      = self.trial_info['trial_type']
@@ -1213,23 +1323,41 @@ class MainScreen(object):
             subphase1_RR, subphase1_left_button_presses, subphase1_right_button_presses = "NA", "NA", "NA"
             subphase2_RR = self.trial_RR 
             subphase2_button_presses = self.button_presses
+            correct_choice = "NA"
+            
                 
         elif self.training_phase == 2:
+            if self.trial_info['trial_type'] != "SBE_trial":
+                left_stim               = self.trial_info["left"]["Name"].split(".")[0]
+                left_stim_training_set  = self.trial_info["left"]["TrainingSet"]
+                left_stim_num           = self.trial_info["left"]["StimulusNum"]
+                right_stim              = self.trial_info["right"]["Name"].split(".")[0]
+                right_stim_training_set = self.trial_info["right"]["TrainingSet"]
+                right_stim_num          = self.trial_info["right"]["StimulusNum"]
+                correct_choice          = "NA"
+            else: # SBE trials
+                left_stim               = f'{self.trial_info["left"]}_SBE'
+                left_stim_training_set  = "NA"
+                left_stim_num           = "NA"
+                right_stim              = f'{self.trial_info["right"]}_SBE'
+                right_stim_training_set = "NA"
+                right_stim_num          = "NA"
+                correct_choice          = self.correct_choice
+                
             # Stimuli
             trial_type              = self.trial_info['trial_type']
-            center_stimulus         = "terminal_link_circle"
-            left_stim               = self.trial_info["left"]["Name"].split(".")[0]
-            left_stim_training_set  = self.trial_info["left"]["TrainingSet"]
-            left_stim_num           = self.trial_info["left"]["StimulusNum"]
-            right_stim              = self.trial_info["right"]["Name"].split(".")[0]
-            right_stim_training_set = self.trial_info["right"]["TrainingSet"]
-            right_stim_num          = self.trial_info["right"]["StimulusNum"]
+            center_stimulus         = "NA"
             # Button presses
             subphase1_RR = self.choice_trial_RR
             subphase1_left_button_presses = self.left_button_presses
             subphase1_right_button_presses = self.right_button_presses
-            subphase2_RR = self.terminal_link_trial_RR 
-            subphase2_button_presses = self.terminal_link_button_presses
+            subphase2_RR = "NA"
+            subphase2_button_presses = "NA"
+            
+        if self.previous_choice_correct:
+            correction_trial = 0
+        else:
+            correction_trial = 1
             
         # Print terminal feedback
         print(f"{outcome:>30} | x: {x: ^4} y: {y:^4} | {self.trial_stage:^5} | {str(datetime.now() - self.start_time)}")
@@ -1277,6 +1405,10 @@ class MainScreen(object):
             subphase2_RR,
             subphase2_button_presses,
             
+            # Correction procedure info
+            correction_trial,
+            correct_choice,
+            
             # Video info
             self.record_video, # Video recording 0/1
             self.top_filename, # Recording file name
@@ -1293,7 +1425,8 @@ class MainScreen(object):
                        "RightStim", "RightStimTrainingSet", "RightStimNumber",
                        "SubPhase1RR", "SubPhase1LeftButtonPresses",
                        "SubPhase1RightButtonPresses", "SubPhase2RR",
-                       "SubPhase2ButtonPresses", "VideoRecorded",
+                       "SubPhase2ButtonPresses", "CorrectionTrial",
+                       "CorrectChoice", "VideoRecorded",
                        "TopVideoFileName", "SideVideoFileName"]
 
         
@@ -1328,9 +1461,6 @@ except:
         rpi_board.set_PWM_frequency(servo_GPIO_num,
                                     False)
         rpi_board.stop()
-        # Stop command to video recording if the program crashes
-        if self.record_video and self.currently_recording:
-            self.stop_recording_video()
             
             
 
