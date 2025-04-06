@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-03
+Last updated: 2025-04-05
 
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
@@ -664,7 +664,7 @@ class MainScreen(object):
                     g_counter = gap
                     while g_counter > 0:
                         # Insert specific SBE stimuli for this trial
-                        possible_SBE_stimuli = ["#77FF00", "FF8100", "#D5869D",
+                        possible_SBE_stimuli = ["#77FF00", "#FF8100", "#D5869D",
                                                 "#902090", "#FF1100", "#6B4330"] 
                         SBE_trial =  {'left': possible_SBE_stimuli.pop(choice(list(range(0, len(possible_SBE_stimuli))))), # Choose and remove a random color from the list
                                       'right': possible_SBE_stimuli.pop(choice(list(range(0, len(possible_SBE_stimuli))))), # Choose and remove a random color from the list,
@@ -994,21 +994,56 @@ class MainScreen(object):
                     right_key_color = self.trial_info['right']
                     key_diameter = 100
                     
-                    # TODO: Build in receptive fields...
-                    # TODO: Change rectangles to some irregular and novel shape not used in any stimuli
+                    # COMPLETED: Build in receptive fields...
+                    
+                    # Left Receptive field
+                    
+                    
+                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 2.7 + 110,
+                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 2.7 + 100,
+                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter / 2.7 + 110,
+                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter / 2.7 + 100,
+                                                       outline = "#7F7F7F",
+                                                       fill = "#7F7F7F", 
+                                                       tag      = "left_stimulus_key" # Because receptive field will manage outcome
+                                                   )  
+                           
+                    
+                    # Right Receptive Field
+                    
+  
+                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 2.7 - 45 + 175,
+                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 2.7 + 100,
+                                                       self.choice_key_coord_dict["right_choice"][0] + key_diameter / 2.7 - 45 + 175,
+                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter / 2.7 + 100,
+                                                       outline = "#7F7F7F",
+                                                       fill = "#7F7F7F", 
+                                                       tag      = "right_stimulus_key" # Because receptive field will manage outcome
+                                                   )
+                    
+                    
+
+                    
+                    
+                    
+                    # COMPLETED: Change rectangles to some irregular and novel shape not used in any stimuli
                     # Left image
-                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["left_choice"][0] - key_diameter,
-                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter,
-                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter,
-                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter,
+                    self.mastercanvas.create_arc(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 2.7 - 140,
+                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 2.7 + 100,
+                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter * 2.7 - 140,
+                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter * 2.7 + 100,
+                                                       extent = 70,
+                                                       outline = "black",
                                                        fill = left_key_color, 
                                                        tag      = "left_stimulus_key" # Because receptive field will manage outcome
                                                    )
                     # Right image
-                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["right_choice"][0] - key_diameter,
-                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter,
-                                                       self.choice_key_coord_dict["right_choice"][0] + key_diameter,
-                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter,
+                    self.mastercanvas.create_arc(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 2.7 - 120,
+                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 2.7 + 100,
+                                                       self.choice_key_coord_dict["right_choice"][0] + key_diameter * 2.7 - 120,
+                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter * 2.7 + 100,
+                                                       extent = 70,
+                                                       outline = "black",
                                                        fill = right_key_color, 
                                                        tag      = "right_stimulus_key" # Because receptive field will manage outcome
                                                    )
