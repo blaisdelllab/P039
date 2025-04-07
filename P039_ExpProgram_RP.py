@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-05
+Last updated: 2025-04-07
 
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
@@ -411,8 +411,8 @@ class MainScreen(object):
                        "TrialSubStage", "TrialTime", "TrialSubStageTimer",
                        "ITIDuration", "Xcord","Ycord", "CenterPythDist", 
                        "LeftPythDist", "RightPythDist", "CenterStim",
-                       "LeftStim", "LeftStimTrainingSet", "LeftStimNumber",
-                       "RightStim", "RightStimTrainingSet", "RightStimNumber",
+                       "LeftStim", "LeftStimTrainingSet", "LeftStimNumber", "LeftSBEColor",
+                       "RightStim", "RightStimTrainingSet", "RightStimNumber", "RightSBEColor",
                        "SubPhase1RR", "SubPhase1LeftButtonPresses",
                        "SubPhase1RightButtonPresses", "SubPhase2RR",
                        "SubPhase2ButtonPresses", "CorrectionTrial",
@@ -940,18 +940,19 @@ class MainScreen(object):
                                        self.write_data(event, event_type))
         # Pre-training
         if self.training_phase == 0 and self.trial_stage == 2:
-            # Build our pre-training nesting oval stimuli
-            self.mastercanvas.create_oval(392, 258, 609, 475,
+            # Build our pre-training stimulus, which is the same as SBE stimuli
+            self.mastercanvas.create_rectangle(392, 258, 609, 475,
                                           fill = "#7F7F7F",
                                           outline = "",
                                           tag = "pretraining_key")
             
-            self.mastercanvas.create_oval(417, 283, 584, 450,
+            self.mastercanvas.create_arc(227, 273, 594, 615,
                                           fill      = "#2596be",
                                           outline   = "black",
+                                          extent = 70,
                                           tag       = "pretraining_key")
             
-            self.mastercanvas.create_oval(500, 365, 502, 367,
+            self.mastercanvas.create_oval(502, 377, 504, 379,
                                           fill      = "black",
                                           outline   = "black",
                                           tag       = "pretraining_key")
@@ -1363,6 +1364,8 @@ class MainScreen(object):
             subphase2_RR = self.trial_RR 
             subphase2_button_presses = self.button_presses
             correct_choice = "NA"
+            left_key_color = "NA"
+            right_key_color = "NA"
             
         elif self.training_phase == 1:
             trial_type      = self.trial_info['trial_type']
@@ -1373,7 +1376,8 @@ class MainScreen(object):
             subphase2_RR = self.trial_RR 
             subphase2_button_presses = self.button_presses
             correct_choice = "NA"
-            
+            left_key_color = "NA"
+            right_key_color = "NA"
                 
         elif self.training_phase == 2:
             if self.trial_info['trial_type'] != "SBE_trial":
@@ -1384,6 +1388,8 @@ class MainScreen(object):
                 right_stim_training_set = self.trial_info["right"]["TrainingSet"]
                 right_stim_num          = self.trial_info["right"]["StimulusNum"]
                 correct_choice          = "NA"
+                left_key_color = "NA"
+                right_key_color = "NA"
             else: # SBE trials
                 left_stim               = f'{self.trial_info["left"]}_SBE'
                 left_stim_training_set  = "NA"
@@ -1392,6 +1398,8 @@ class MainScreen(object):
                 right_stim_training_set = "NA"
                 right_stim_num          = "NA"
                 correct_choice          = self.correct_choice
+                left_key_color = self.trial_info['left']
+                right_key_color = self.trial_info['right']
                 
             # Stimuli
             trial_type              = self.trial_info['trial_type']
@@ -1443,9 +1451,11 @@ class MainScreen(object):
             left_stim,
             left_stim_training_set,
             left_stim_num,
+            left_key_color,
             right_stim,
             right_stim_training_set, 
             right_stim_num, 
+            right_key_color,
             
             # Button press info
             subphase1_RR,
@@ -1470,8 +1480,8 @@ class MainScreen(object):
                        "TrialSubStage", "TrialTime", "TrialSubStageTimer",
                        "ITIDuration", "Xcord","Ycord", "CenterPythDist", 
                        "LeftPythDist", "RightPythDist", "CenterStim",
-                       "LeftStim", "LeftStimTrainingSet", "LeftStimNumber",
-                       "RightStim", "RightStimTrainingSet", "RightStimNumber",
+                       "LeftStim", "LeftStimTrainingSet", "LeftStimNumber", "LeftSBEColor",
+                       "RightStim", "RightStimTrainingSet", "RightStimNumber", "RightSBEColor",
                        "SubPhase1RR", "SubPhase1LeftButtonPresses",
                        "SubPhase1RightButtonPresses", "SubPhase2RR",
                        "SubPhase2ButtonPresses", "CorrectionTrial",
