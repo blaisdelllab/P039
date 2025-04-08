@@ -471,7 +471,6 @@ class MainScreen(object):
             self.mastercanvas.delete("all")
             self.root.unbind("<space>")
             self.start_time = datetime.now() # Set start time
-            
             if operant_box_version:
                 rpi_board.write(string_LED_GPIO_num,
                     True) # Turn on the LED strings
@@ -519,6 +518,7 @@ class MainScreen(object):
                         if d['TrainingSet'] == "0": # Probe stimuli
                             if d['StimulusNum'] == str(probe_stim_number):
                                 self.trial_stimulus_order.append(d)
+
                 # Add 60 more
                 for iteration in [0,1]: # Run twice
                     while True:
@@ -536,7 +536,7 @@ class MainScreen(object):
                         # Break if good shuffle
                         if bad_shuffle == False:
                             break
-                            
+
                     # Once a good shuffle is established
                     for d in self.tenative_stimuli_identity_d_list:
                         self.trial_stimulus_order.append(d)
@@ -675,21 +675,17 @@ class MainScreen(object):
                     if len(self.probe_stimulus_order) > 0:
                         self.trial_stimulus_order.append(self.probe_stimulus_order.pop(0))
                         
-            # Create a list of left/right correct choices for SBE trials
-            self.correct_choice_list = ["left", "right"] * ((len(self.trial_stimulus_order) - 12) // 2)
-            
-            approved = False
-            while not approved:
-                shuffle(self.correct_choice_list)
-                approved = True  # Assume approved until a threepeat is found
-                # Check for three consecutive identical choices
-                for c in range(2, len(self.correct_choice_list)):
-                    if (self.correct_choice_list[c] == self.correct_choice_list[c-1] == self.correct_choice_list[c-2]):
-                        approved = False
-                        break
-            #Generates a quasi-random list of left and right that does not contain any "left" or "right" for 3 in a row
-          
-            # shuffle(self.correct_choice_list)
+                # Create a list of left/right correct choices for SBE trials
+                self.correct_choice_list = ["left", "right"] * ((len(self.trial_stimulus_order) - 12) // 2)
+                approved = False
+                while not approved:
+                    shuffle(self.correct_choice_list)
+                    approved = True  # Assume approved until a threepeat is found
+                    # Check for three consecutive identical choices
+                    for c in range(2, len(self.correct_choice_list)):
+                        if (self.correct_choice_list[c] == self.correct_choice_list[c-1] == self.correct_choice_list[c-2]):
+                            approved = False
+                            break
             
             # After the order of stimuli per trial is determined, there are a 
             # couple other things that neeed to occur during the first ITI:
