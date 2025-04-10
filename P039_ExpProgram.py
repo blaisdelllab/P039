@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-08
+Last updated: 2025-04-10
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
 
@@ -675,16 +675,57 @@ class MainScreen(object):
                         self.trial_stimulus_order.append(self.probe_stimulus_order.pop(0))
                         
                 # Create a list of left/right correct choices for SBE trials
-                self.correct_choice_list = ["left", "right"] * ((len(self.trial_stimulus_order) - 12) // 2)
-                approved = False
-                while not approved:
-                    shuffle(self.correct_choice_list)
-                    approved = True  # Assume approved until a threepeat is found
-                    # Check for three consecutive identical choices
-                    for c in range(2, len(self.correct_choice_list)):
-                        if (self.correct_choice_list[c] == self.correct_choice_list[c-1] == self.correct_choice_list[c-2]):
-                            approved = False
-                            break
+                
+                premade_list1 = ["left", "right", "left", "right", "right", "left", "left", "right", "right", "left",
+                                 "right", "left", "left", "right", "left", "right", "right", "left", "right", "left",
+                                 "left", "right", "left", "right", "left", "right", "left", "right", "right", "left",
+                                 "right", "left", "left", "right", "left", "right", "left", "right", "left", "right",
+                                 "right", "left", "left", "right", "right", "left", "left", "right", "left", "right",
+                                 "left", "right", "left", "left", "right", "right", "left", "right", "left", "right",
+                                 "left", "right", "left", "right", "left", "right", "left", "right"]
+                
+                premade_list2 = ["right", "left", "left", "right", "left", "right", "right", "left", "left", "right",
+                                 "right", "left", "right", "left", "right", "left", "left", "right", "left", "right",
+                                 "right", "left", "right", "left", "right", "left", "right", "left", "left", "right",
+                                 "left", "right", "right", "left", "right", "left", "left", "right", "left", "right",
+                                 "right", "left", "right", "left", "right", "left", "left", "right", "left", "right",
+                                 "right", "left", "left", "right", "left", "right", "right", "left", "right", "left",
+                                 "right", "left", "right", "left", "left", "right", "left", "right", "right", "left"]
+                
+                
+                premade_list3 = ["left", "left", "right", "left", "right", "right", "left", "right", "left", "left",
+                                 "right", "right", "left", "right", "right", "left", "left", "right", "left", "right",
+                                 "left", "right", "right", "left", "right", "left", "left", "right", "left", "right",
+                                 "right", "left", "right", "left", "left", "right", "right", "left", "left", "right",
+                                 "left", "right", "left", "right", "right", "left", "left", "right", "right", "left",
+                                 "right", "left", "right", "right", "left", "left", "right", "left", "right", "left",
+                                 "left", "right", "left", "right", "right", "left", "right", "left"]
+                
+                premade_list4 = ["right", "right", "left", "right", "left", "left", "right", "left", "right", "right",
+                                 "left", "right", "left", "left", "right", "left", "right", "right", "left", "right",
+                                 "left", "left", "right", "left", "right", "right", "left", "right", "left", "left",
+                                 "right", "left", "right", "right", "left", "right", "left", "left", "right", "left",
+                                 "right", "right", "left", "right", "left", "left", "right", "left", "right", "right",
+                                 "left", "right", "left", "left", "right", "left", "right", "right", "left", "right",
+                                 "left", "left", "right", "left", "right", "right", "left", "left"]
+                
+                premade_lists = [premade_list1, premade_list2, premade_list3, premade_list4]
+
+                # Directly choose one of the premade lists
+                self.correct_choice_list = choice(premade_lists)
+
+                
+                # OLD CODE: Loops too many times and crashes 
+                # self.correct_choice_list = ["left", "right"] * ((len(self.trial_stimulus_order) - 12) // 2)
+                # approved = False
+                # while not approved:
+                #     shuffle(self.correct_choice_list)
+                #     approved = True  # Assume approved until a threepeat is found
+                #     # Check for three consecutive identical choices
+                #     for c in range(2, len(self.correct_choice_list)):
+                #         if (self.correct_choice_list[c] == self.correct_choice_list[c-1] == self.correct_choice_list[c-2]):
+                #             approved = False
+                #             break
             
             # After the order of stimuli per trial is determined, there are a 
             # couple other things that neeed to occur during the first ITI:
