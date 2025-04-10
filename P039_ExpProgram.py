@@ -481,7 +481,13 @@ class MainScreen(object):
             # numbers (class) and stimulus numbers.
             with open(stimuli_csv_path, 'r', encoding='utf-8-sig') as f:
                 dict_reader = DictReader(f) 
-                self.tenative_stimuli_identity_d_list = list(dict_reader)
+                self.d_list = list(dict_reader)
+                
+            self.tenative_stimuli_identity_d_list = []
+            # Reduce our stimuli to StimulusNum 1 or 5
+            for d in self.d_list:
+                if d['StimulusNum'] in ['1', '5']:
+                    self.tenative_stimuli_identity_d_list.append(d)
                                                                 
             # Once the list of dictionaries is written, we can use it to assign
             # the stimuli to each trial of the session. We do this by writing
@@ -493,8 +499,8 @@ class MainScreen(object):
             # pseudo-randomly selected without replacement from the 25 possible
             # training stimuli.
             if self.training_phase == 1:
-                # First 30 trials are set as 5 control, 1 probe, 5 control, etc.
-                while len(self.trial_stimulus_order) < 30:
+                # First 30 trials are set as 5 control, 1 probe, 5 control, 1 probe
+                while len(self.trial_stimulus_order) < 12:
                     # First, select the first five stimuli
                     five_classes = list(range(1, 6))
                     shuffle(five_classes)
@@ -518,12 +524,12 @@ class MainScreen(object):
                             if d['StimulusNum'] == str(probe_stim_number):
                                 self.trial_stimulus_order.append(d)
 
-                # Add 60 more
-                for iteration in [0,1]: # Run twice
+                # Add 72 more
+                for iteration in list(range(0,6)): # Run twice
                     while True:
                         bad_shuffle = False
                         shuffle(self.tenative_stimuli_identity_d_list)
-                        for i in list(range(2, 30)): # Assumes len(self.tenative_stimuli_identity_d_list) == 30
+                        for i in list(range(2, 12)): # Assumes len(self.tenative_stimuli_identity_d_list) == 30
                             d1 = self.tenative_stimuli_identity_d_list[i]
                             c1 = d1["TrainingSet"]
                             d2 = self.tenative_stimuli_identity_d_list[i - 1]
@@ -714,19 +720,6 @@ class MainScreen(object):
                 # Directly choose one of the premade lists
                 self.correct_choice_list = choice(premade_lists)
 
-                
-                # OLD CODE: Loops too many times and crashes 
-                # self.correct_choice_list = ["left", "right"] * ((len(self.trial_stimulus_order) - 12) // 2)
-                # approved = False
-                # while not approved:
-                #     shuffle(self.correct_choice_list)
-                #     approved = True  # Assume approved until a threepeat is found
-                #     # Check for three consecutive identical choices
-                #     for c in range(2, len(self.correct_choice_list)):
-                #         if (self.correct_choice_list[c] == self.correct_choice_list[c-1] == self.correct_choice_list[c-2]):
-                #             approved = False
-                #             break
-            
             # After the order of stimuli per trial is determined, there are a 
             # couple other things that neeed to occur during the first ITI:
             if self.subject_ID == "TEST": # If test, don't worry about ITI delays
