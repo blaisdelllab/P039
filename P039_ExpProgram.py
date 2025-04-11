@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-10
+Last updated: 2025-04-11
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
 
@@ -195,7 +195,7 @@ class ExperimenterControlPanel(object):
         self.control_window.title("P039 Control Panel")
         ##  Next, setup variables within the control panel
         # Subject ID
-        self.pigeon_name_list = ["Peach","Wario", "Jagger", "Herriot"] # TODO: Update names
+        self.pigeon_name_list = ["Thoth","Luigi", "Wenchang", "Sting"]
         self.pigeon_name_list.sort() # This alphabetizes the list
         self.pigeon_name_list.insert(0, "TEST")
         
@@ -343,13 +343,13 @@ class MainScreen(object):
         # G3 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
         # G4 would recieve probe stimuli in the following order: P5-P1-P4-P3-P2
         
-        # This counterbalancing schedule was maintained across multiple sessions. TODO:
+        # This counterbalancing schedule was maintained across multiple sessions
         dict_of_subject_assignments = {
             "TEST": 1,
-            "Peach": 1,
-            "Wario": 2,
-            "Jagger": 3,
-            "Herriot": 4
+            "Thoth": 1,
+            "Luigi": 2,
+            "Wenchang": 3,
+            "Sting": 4
             }
         
         self.control_condition = dict_of_subject_assignments[self.subject_ID]
