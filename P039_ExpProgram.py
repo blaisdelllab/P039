@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-11
+Last updated: 2025-04-17
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
 
@@ -368,7 +368,14 @@ class MainScreen(object):
         self.choice_task_RR = 10
         self.trial_num = 0 # counter for current trial in session
         self.trial_stage = 0 # Trial substage (we have 2: blank screen/stimulus presentation or choice trial/terminal link)
-        self.max_number_of_reinforced_trials = 90 # Max number of trials within a session (three trials per stimulus)
+        
+         # Max number of trials within a session (three trials per stimulus), 
+         # for pre-training it remains at 90 trials
+        if self.training_phase == 0: 
+            self.max_number_of_reinforced_trials = 90
+        elif self.training_phase == 1 or self.training_phase == 2: 
+            self.max_number_of_reinforced_trials = 84
+
         self.trial_type = "NA" # Does not change if pretraining
         self.correction_trial = False # Differentiates correction trials
         self.correct_choice = "NA" # Side of correct choice for phase 2
