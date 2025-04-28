@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-17
+Last updated: 2025-04-28
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
 
@@ -308,7 +308,6 @@ class ExperimenterControlPanel(object):
         else:
             print("\n ERROR: Input Correct Pigeon ID Before Starting Session")
             
-
 
 # Then, setup the MainScreen object
 class MainScreen(object):
@@ -856,7 +855,6 @@ class MainScreen(object):
             self.write_comp_data(False) # update data .csv with trial data from the previous trial
             self.trial_stage = 1 # Reset trial substage
         
-
             # Increase trial counter by one
             if self.previous_choice_correct:
                 # Update next trial's info
@@ -867,7 +865,8 @@ class MainScreen(object):
                         self.correct_choice = self.correct_choice_list[self.trial_num]
                 self.trial_num += 1
                 # Determine correct side
-                
+            
+            # TODO: Move this from ITI to build keys (with all the RR resetting functions below)
             else:
                 self.correction_trial = True
 
@@ -1023,6 +1022,10 @@ class MainScreen(object):
                                                                         ks))
         # Choice phase
         elif self.training_phase == 2:
+            # TODO: Add a post-choice phase grey cover after an incorrect choice
+            # TODO: Shrink size of stimuli (here or with literal stimuli files)
+            # TODO: Lower location of stimuli on the screen 
+
             # Binary choice sub-phase 1
             if self.trial_stage == 1:
                 if self.trial_type == "SBE_trial":
@@ -1063,7 +1066,7 @@ class MainScreen(object):
                     
                     
                     
-                    # COMPLETED: Change rectangles to some irregular and novel shape not used in any stimuli
+                    # Change rectangles to some irregular and novel shape not used in any stimuli
                     # Left image
                     self.mastercanvas.create_arc(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 2.7 - 140,
                                                        self.choice_key_coord_dict["left_choice"][1] - key_diameter * 2.7 + 100,
@@ -1168,8 +1171,6 @@ class MainScreen(object):
                                                                         ks))
             
     """ 
-    # COMPLETED: Explain what key_press() function does
-    
     This key_press() function is responsible for registering pigeon inputs when
     the "receptive fields" for each training phases is pecked on. For the 
     pre-training and mixed autoshaping-instrumental phases, the function would
@@ -1223,7 +1224,7 @@ class MainScreen(object):
                         else:
                             self.write_data(event, "incorrect_choice")
                             self.previous_choice_correct = False
-                            self.ITI()
+                            self.ITI() # TODO: Instead of going through the ITI, simply build the cover (make sure to reset RR etc. of displayed keys)
                 elif self.right_button_presses == self.choice_trial_RR:
                     self.write_data(event, ("right_stimulus_choice"))
                     if self.trial_type != "SBE_trial":
@@ -1238,7 +1239,7 @@ class MainScreen(object):
                         else:
                             self.write_data(event, "incorrect_choice")
                             self.previous_choice_correct = False
-                            self.ITI()
+                            self.ITI() # TODO: Instead of going through the ITI, simply build the cover (make sure to reset RR etc. of displayed keys)
 
         
     
