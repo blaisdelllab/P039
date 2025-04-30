@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-28
+Last updated: 2025-04-29
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
 
@@ -1023,8 +1023,7 @@ class MainScreen(object):
         # Choice phase
         elif self.training_phase == 2:
             # TODO: Add a post-choice phase grey cover after an incorrect choice
-            # TODO: Shrink size of stimuli (here or with literal stimuli files)
-            # TODO: Lower location of stimuli on the screen 
+           
 
             # Binary choice sub-phase 1
             if self.trial_stage == 1:
@@ -1032,18 +1031,18 @@ class MainScreen(object):
                     # Setup l/r coordinate and image info
                     left_key_color = self.trial_info['left']
                     right_key_color = self.trial_info['right']
-                    key_diameter = 100
+                    key_diameter = 50
                     
                     # COMPLETED: Build in receptive fields...
                     
                     # Left Receptive field
                     
                     
-                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 2.7 + 110,
-                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 2.7 + 100,
-                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter / 2.7 + 110,
-                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter / 2.7 + 100,
-                                                       outline = "#7F7F7F",
+                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 3.5 + 110,
+                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 3.5 + 310,
+                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter / 3.5 + 110,
+                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter / 3.5 + 310,
+                                                       outline = "red",
                                                        fill = "#7F7F7F", 
                                                        tag      = "left_stimulus_key" # Because receptive field will manage outcome
                                                    )  
@@ -1052,11 +1051,11 @@ class MainScreen(object):
                     # Right Receptive Field
                     
   
-                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 2.7 - 45 + 175,
-                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 2.7 + 100,
-                                                       self.choice_key_coord_dict["right_choice"][0] + key_diameter / 2.7 - 45 + 175,
-                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter / 2.7 + 100,
-                                                       outline = "#7F7F7F",
+                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 3.5 + 30,
+                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 3.5 + 310,
+                                                       self.choice_key_coord_dict["right_choice"][0] + key_diameter / 3.5 + 30 ,
+                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter / 3.5 + 310,
+                                                       outline = "red",
                                                        fill = "#7F7F7F", 
                                                        tag      = "right_stimulus_key" # Because receptive field will manage outcome
                                                    )
@@ -1068,10 +1067,10 @@ class MainScreen(object):
                     
                     # Change rectangles to some irregular and novel shape not used in any stimuli
                     # Left image
-                    self.mastercanvas.create_arc(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 2.7 - 140,
-                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 2.7 + 100,
-                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter * 2.7 - 140,
-                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter * 2.7 + 100,
+                    self.mastercanvas.create_arc(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 2.7 - 40,
+                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 2.7 + 300,
+                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter * 2.7 - 40,
+                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter * 2.7 + 300,
                                                        extent = 70,
                                                        outline = "black",
                                                        fill = left_key_color, 
@@ -1079,9 +1078,9 @@ class MainScreen(object):
                                                    )
                     # Right image
                     self.mastercanvas.create_arc(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 2.7 - 120,
-                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 2.7 + 100,
+                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 2.7 + 300,
                                                        self.choice_key_coord_dict["right_choice"][0] + key_diameter * 2.7 - 120,
-                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter * 2.7 + 100,
+                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter * 2.7 + 300,
                                                        extent = 70,
                                                        outline = "black",
                                                        fill = right_key_color, 
