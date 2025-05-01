@@ -5,7 +5,7 @@
 Created on Tues Nov 19 2024
 @author: cyruskirkman, Zayaan K., & Arnav R.
 
-Last updated: 2025-04-29
+Last updated: 2025-04-30
     
 P039 - Selective Aversion to Predator Eye Orientation in Pigeons
 
@@ -365,9 +365,10 @@ class MainScreen(object):
         ## Define some other variables that will be important for the procedure
         self.autoshaping_RR = 5
         self.choice_task_RR = 10
-        self.trial_num = 0 # counter for current trial in session
-        self.trial_stage = 0 # Trial substage (we have 2: blank screen/stimulus presentation or choice trial/terminal link)
-        
+        self.trial_num      = 0 # counter for current trial in session
+        self.trial_stage    = 0 # Trial substage (we have 2: blank screen/stimulus presentation or choice trial/terminal link)
+        self.image_diameter = 100
+
          # Max number of trials within a session (three trials per stimulus), 
          # for pre-training it remains at 90 trials
         if self.training_phase == 0: 
@@ -398,12 +399,13 @@ class MainScreen(object):
         self.trial_delay_duration = 10 * 1000 # delay after a trial starts but before the stimulus is presented (screen is black)
         
         # These are additional stimuli-specific variables...
-        self.image_center = [512,384]
+        self.image_center = [512,584]
         if self.training_phase == 2:
             self.choice_key_coord_dict = {
                 "left_choice"  : [211.5, 374],
                 "right_choice" : [812.5, 374]
                 } 
+        self.receptive_field_diameter = 150
         self.neutral_feedback_color = "#2596BE" # For the blue circle in pre-training
         self.background_color = "#7F7F7F" # Background color for trials for all stimuli
         self.yellow_color = "#E8D24C"
@@ -554,7 +556,7 @@ class MainScreen(object):
                 
                 # Finally, load the image files into the dictionary:
                 for i in self.trial_stimulus_order:
-                    i["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["Name"]}'))
+                    i["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["Name"]}').resize((self.image_diameter, self.image_diameter)))
                     if int(i["TrainingSet"]) == 0:
                         i["trial_type"] = "probe"
                     else:
@@ -660,8 +662,8 @@ class MainScreen(object):
                         
                 # Finally, load the image files into the dictionary:
                 for i in self.probe_stimulus_order:
-                    i["left"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["left"]["Name"]}'))
-                    i["right"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["right"]["Name"]}'))
+                    i["left"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["left"]["Name"]}').resize((self.image_diameter, self.image_diameter)))
+                    i["right"]["img"] = ImageTk.PhotoImage(Image.open(f'P039a_Stimuli/{i["right"]["Name"]}').resize((self.image_diameter, self.image_diameter)))
             
                 # After all our experimental probe trials are compiled, we now
                 # insert our side-bias elimination (SBE) trials between them.
@@ -751,29 +753,32 @@ class MainScreen(object):
     ## Video recording functions to start and stop recording from both top and side both cameras
     
     def start_recording_video(self):
-        # First, we need to set up the save directories to organize video files
-        current_date = strftime("%Y-%m-%d")  # Format: YYYY-MM-DD
-        file_parent_directory = f"Desktop/Videos/{self.subject_ID}/Phase{self.training_phase}/{self.subject_ID}_{current_date}"
-        # Make subject folder if it doesn't already exist
-        makedirs(f"{os_path.expanduser('~')}/{file_parent_directory}", exist_ok = True)
+        try:
+            # First, we need to set up the save directories to organize video files
+            current_date = strftime("%Y-%m-%d")  # Format: YYYY-MM-DD
+            file_parent_directory = f"Desktop/Videos/{self.subject_ID}/Phase{self.training_phase}/{self.subject_ID}_{current_date}"
+            # Make subject folder if it doesn't already exist
+            makedirs(f"{os_path.expanduser('~')}/{file_parent_directory}", exist_ok = True)
 
-        # Then we can name files
-        base_filename = f"{self.subject_ID}_Phase{self.training_phase}_{current_date}_Trial{self.trial_num}-{self.trial_type}"
-        
-        # Differentiate top/side cam filenames
-        self.top_filename  = f"{base_filename}_TOPcam.mp4"
-        self.side_filename = f"{base_filename}_SIDEcam.mp4"
-        
-        #Start recording with the generated filenames by calling shell script
-        run([
-            str(os_path.expanduser('~')+"/Desktop/Video_Recording_Software/start_recording.sh"),
-            f"{file_parent_directory}/{self.top_filename}", # $1 .sh argument
-            f"{file_parent_directory}/{self.side_filename}" # $2 .sh argument
-        ])
-        
-        # Then set local .py variables and write data
-        self.currently_recording = True
-        self.write_data(None,"video_recording_started")
+            # Then we can name files
+            base_filename = f"{self.subject_ID}_Phase{self.training_phase}_{current_date}_Trial{self.trial_num}-{self.trial_type}"
+            
+            # Differentiate top/side cam filenames
+            self.top_filename  = f"{base_filename}_TOPcam.mp4"
+            self.side_filename = f"{base_filename}_SIDEcam.mp4"
+            
+            #Start recording with the generated filenames by calling shell script
+            run([
+                str(os_path.expanduser('~')+"/Desktop/Video_Recording_Software/start_recording.sh"),
+                f"{file_parent_directory}/{self.top_filename}", # $1 .sh argument
+                f"{file_parent_directory}/{self.side_filename}" # $2 .sh argument
+            ])
+            
+            # Then set local .py variables and write data
+            self.currently_recording = True
+            self.write_data(None,"video_recording_started")
+        except FileNotFoundError:
+            print("ERROR starting video recording: Cannot find 'start_recording.sh' shell script")
         
     
     def stop_recording_video(self):
@@ -854,21 +859,23 @@ class MainScreen(object):
             self.trial_substage_start_time = time() # Reset substage timer
             self.write_comp_data(False) # update data .csv with trial data from the previous trial
             self.trial_stage = 1 # Reset trial substage
-        
-            # Increase trial counter by one
-            if self.previous_choice_correct:
-                # Update next trial's info
-                if self.training_phase != 0: # If trials differ, grab info for upcoming trial
-                    self.trial_info = self.trial_stimulus_order[self.trial_num]
-                    self.trial_type = self.trial_info['trial_type']
-                    if self.trial_type == "SBE_trial":
-                        self.correct_choice = self.correct_choice_list[self.trial_num]
-                self.trial_num += 1
-                # Determine correct side
-            
-            # TODO: Move this from ITI to build keys (with all the RR resetting functions below)
-            else:
-                self.correction_trial = True
+
+            try: # TODO: This is a bandaid
+                # Increase trial counter by one
+                if self.previous_choice_correct:
+                    # Update next trial's info
+                    if self.training_phase != 0: # If trials differ, grab info for upcoming trial
+                        self.trial_info = self.trial_stimulus_order[self.trial_num]
+                        self.trial_type = self.trial_info['trial_type']
+                        if self.trial_type == "SBE_trial":
+                            self.correct_choice = self.correct_choice_list[self.trial_num]
+                    self.trial_num += 1
+                    # Determine correct side
+                else:
+                    self.correction_trial = True
+            except IndexError:
+                print("Trial max reached")
+                self.exit_program("TrialsCompleted")
 
             
             # Setup variable ITI and RR
@@ -883,7 +890,7 @@ class MainScreen(object):
                 self.button_presses  = 0
                 
             elif self.training_phase == 2:
-                self.ITI_duration    = 20 * 1000
+                self.ITI_duration          = 20 * 1000
                 # Choice Task FR
                 self.choice_trial_RR       = 10 # FR10
                 self.left_button_presses   = 0
@@ -1022,9 +1029,6 @@ class MainScreen(object):
                                                                         ks))
         # Choice phase
         elif self.training_phase == 2:
-            # TODO: Add a post-choice phase grey cover after an incorrect choice
-           
-
             # Binary choice sub-phase 1
             if self.trial_stage == 1:
                 if self.trial_type == "SBE_trial":
@@ -1032,38 +1036,30 @@ class MainScreen(object):
                     left_key_color = self.trial_info['left']
                     right_key_color = self.trial_info['right']
                     key_diameter = 50
-                    
-                    # COMPLETED: Build in receptive fields...
+                    if self.subject_ID == "TEST":
+                        receptive_field_outline_color = "red"
+                    else:
+                        receptive_field_outline_color = "#7F7F7F" # grey
                     
                     # Left Receptive field
-                    
-                    
-                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 3.5 + 110,
-                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 3.5 + 310,
+                    self.mastercanvas.create_oval(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 3.5 + 110,
+                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 3.5 + 330,
                                                        self.choice_key_coord_dict["left_choice"][0] + key_diameter / 3.5 + 110,
-                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter / 3.5 + 310,
-                                                       outline = "red",
+                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter / 3.5 + 330,
+                                                       outline = receptive_field_outline_color,
                                                        fill = "#7F7F7F", 
                                                        tag      = "left_stimulus_key" # Because receptive field will manage outcome
                                                    )  
-                           
                     
                     # Right Receptive Field
-                    
-  
-                    self.mastercanvas.create_rectangle(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 3.5 + 30,
-                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 3.5 + 310,
+                    self.mastercanvas.create_oval(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 3.5 + 30,
+                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 3.5 + 330,
                                                        self.choice_key_coord_dict["right_choice"][0] + key_diameter / 3.5 + 30 ,
-                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter / 3.5 + 310,
-                                                       outline = "red",
+                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter / 3.5 + 330,
+                                                       outline = receptive_field_outline_color,
                                                        fill = "#7F7F7F", 
                                                        tag      = "right_stimulus_key" # Because receptive field will manage outcome
                                                    )
-                    
-                    
-
-                    
-                    
                     
                     # Change rectangles to some irregular and novel shape not used in any stimuli
                     # Left image
@@ -1108,18 +1104,46 @@ class MainScreen(object):
                                                                             ks))
                     
                 else:
+                    key_diameter = 65
+                    if self.subject_ID == "TEST":
+                        receptive_field_outline_color = "red"
+                    else:
+                        receptive_field_outline_color = "#7F7F7F" # grey
+
+                    # Left Receptive field
+                    self.mastercanvas.create_oval(self.choice_key_coord_dict["left_choice"][0] - key_diameter * 3.5 + 95,
+                                                       self.choice_key_coord_dict["left_choice"][1] - key_diameter * 3.5 + 315,
+                                                       self.choice_key_coord_dict["left_choice"][0] + key_diameter / 3.5 + 95,
+                                                       self.choice_key_coord_dict["left_choice"][1] + key_diameter / 3.5 + 315,
+                                                       outline = receptive_field_outline_color,
+                                                       fill = "#7F7F7F", 
+                                                       tag      = "left_stimulus_key" # Because receptive field will manage outcome
+                                                   )  
+                    
+                    # Right Receptive Field
+                    self.mastercanvas.create_oval(self.choice_key_coord_dict["right_choice"][0] - key_diameter * 3.5 + 68,
+                                                       self.choice_key_coord_dict["right_choice"][1] - key_diameter * 3.5 + 315,
+                                                       self.choice_key_coord_dict["right_choice"][0] + key_diameter / 3.5 + 68,
+                                                       self.choice_key_coord_dict["right_choice"][1] + key_diameter / 3.5 + 315,
+                                                       outline = receptive_field_outline_color,
+                                                       fill = "#7F7F7F", 
+                                                       tag      = "right_stimulus_key" # Because receptive field will manage outcome
+                                                   )
+
                     # Setup l/r coordinate and image info
                     left_key_data = self.trial_info['left']
                     right_key_data = self.trial_info['right']
                     
                     # Left image
-                    self.mastercanvas.create_image(*self.choice_key_coord_dict["left_choice"],
+                    self.mastercanvas.create_image(self.choice_key_coord_dict["left_choice"][0],
+                                                   self.choice_key_coord_dict["left_choice"][1] + 210,
                                                    anchor   = 'center',
                                                    image    = left_key_data["img"],
                                                    tag      = "left_stimulus_key" # Because receptive field will manage outcome
                                                    )
                     # Right image
-                    self.mastercanvas.create_image(*self.choice_key_coord_dict["right_choice"],
+                    self.mastercanvas.create_image(self.choice_key_coord_dict["right_choice"][0],
+                                                   self.choice_key_coord_dict["right_choice"][1] + 210,
                                                    anchor   = 'center',
                                                    image    = right_key_data["img"],
                                                    tag      = "right_stimulus_key"
@@ -1223,7 +1247,7 @@ class MainScreen(object):
                         else:
                             self.write_data(event, "incorrect_choice")
                             self.previous_choice_correct = False
-                            self.ITI() # TODO: Instead of going through the ITI, simply build the cover (make sure to reset RR etc. of displayed keys)
+                            self.correction_trial_TO()
                 elif self.right_button_presses == self.choice_trial_RR:
                     self.write_data(event, ("right_stimulus_choice"))
                     if self.trial_type != "SBE_trial":
@@ -1238,14 +1262,39 @@ class MainScreen(object):
                         else:
                             self.write_data(event, "incorrect_choice")
                             self.previous_choice_correct = False
-                            self.ITI() # TODO: Instead of going through the ITI, simply build the cover (make sure to reset RR etc. of displayed keys)
+                            self.correction_trial_TO()
 
-        
-    
     # %% Post-choice contingencies: always either reinforcement (provide_food)
-    # or time-out (time_out_func). Both lead back to the next trial's ITI,
+    # or correction trial TO (correction_trial_TO). Food leads back to the ITI,
     # thereby completing the loop.
-    
+
+    def correction_trial_TO(self):
+        # Build grey background
+        self.mastercanvas.create_rectangle(0,0,
+                                   self.mainscreen_width,
+                                   self.mainscreen_height,
+                                   fill = "grey", #"red", 
+                                   outline = "grey",
+                                   tag = "bkgrd")
+        self.mastercanvas.tag_bind("bkgrd",
+                                   "<Button-1>",
+                                   lambda event, 
+                                   event_type = "CP_background_peck": 
+                                       self.write_data(event, event_type))
+
+        # Reset variables for next correction trial
+        self.left_button_presses   = 0
+        self.right_button_presses  = 0
+        self.trial_stage           = 1
+
+        # Stop video recording
+        if self.record_video and self.currently_recording:
+            self.stop_recording_video()
+
+        # Set timer
+        CP_timer = self.root.after(5000, lambda: self.sub_stage_one())
+
+
     def provide_food(self, key_pecked):
         # This function is contingent upon correct and timely choice key
         # response. It opens the hopper and then leads to ITI after a preset
